@@ -25,5 +25,5 @@ cp .env.example .env        # then fill in TODOIST_API_TOKEN
 | `npm run test:smoke` | Only tests tagged `@smoke` |
 
 - The environment is picked by `TEST_ENV` (default `prod`) from `config/<TEST_ENV>.ts`.
-- Git hooks: `pre-commit` lints and formats staged files, `commit-msg` requires `#<issue id> <summary>`, `pre-push` blocks direct pushes to `main`.
+- Git hooks: `pre-commit` lints and formats staged files, `commit-msg` requires `#<issue id> <summary>`, `pre-push` blocks direct pushes to `main`. `npm ci` also sets `core.commentChar` to `;` so Git does not strip `#` subject lines written in the editor.
 - The architecture is described in [docs/test-architecture-plan.md](docs/test-architecture-plan.md).

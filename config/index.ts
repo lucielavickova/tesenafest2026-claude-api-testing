@@ -11,9 +11,12 @@ dotenv.config({ quiet: true });
 // One entry per environment file in this folder. Add a new file and register it here.
 const environments: Record<string, EnvConfig> = { prod };
 
-export const envName = process.env['TEST_ENV'] ?? 'prod';
+// An empty TEST_ENV (for example "TEST_ENV=" in .env) falls back to prod as well.
+const rawEnvName = process.env['TEST_ENV']?.trim();
+export const envName = rawEnvName === undefined || rawEnvName === '' ? 'prod' : rawEnvName;
 
-const selected = environments[envName];
+// Object.hasOwn keeps names like "constructor" from resolving to Object.prototype members.
+const selected = Object.hasOwn(environments, envName) ? environments[envName] : undefined;
 if (!selected) {
   throw new Error(
     `Unknown TEST_ENV "${envName}". Available: ${Object.keys(environments).join(', ')}.`,
