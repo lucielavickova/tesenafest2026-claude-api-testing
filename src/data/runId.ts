@@ -4,7 +4,9 @@ import { randomBytes } from 'node:crypto';
 export const TEST_DATA_PREFIX = 'autotest-';
 
 const RUN_ID_VARIABLE = 'AUTOTEST_RUN_ID';
-const RUN_TIMESTAMP = /^autotest-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z-/;
+/** Names start with the test case ID when the test has one, then `autotest-`. */
+const TEST_DATA_NAME = /^(?:TC-\d+[a-z]?-)?autotest-/;
+const RUN_TIMESTAMP = /^(?:TC-\d+[a-z]?-)?autotest-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z-/;
 
 /**
  * Builds a run id such as `20260924T101500Z-gh12345678` (CI) or `20260924T101500Z-local`.
@@ -37,9 +39,33 @@ export function runPrefix(): string {
   return `${TEST_DATA_PREFIX}${getRunId()}-`;
 }
 
-/** A name unique across workers and runs, for example `autotest-<run id>-task-3f9a1c`. */
-export function uniqueName(kind: string): string {
-  return `${runPrefix()}${kind}-${randomBytes(3).toString('hex')}`;
+/**
+ * A name unique across workers and runs, for example `TC-002-autotest-<run id>-task-3f9a1c`.
+ * The test case ID comes first, so a leftover in Todoist shows at a glance which test created it.
+ */
+export function uniqueName(kind: string, testCaseId?: string): string {
+  const owner = testCaseId ? `${testCaseId}-` : '';
+  return `${owner}${runPrefix()}${kind}-${randomBytes(3).toString('hex')}`;
+}
+
+/** True for names created by the tests: `autotest-...` or `TC-002-autotest-...`. */
+export function isTestDataName(name: string): boolean {
+  return TEST_DATA_NAME.test(name);
+}
+
+const TEST_CASE_TAG = /^@(TC-\d+[a-z]?)$/;
+const TEST_CASE_TITLE = /^(TC-\d+[a-z]?)\b/;
+
+/**
+ * The test case ID of a test, such as `TC-002` or `TC-015a`: from its `@TC-...` tag,
+ * otherwise from the start of its title. Undefined when the test has neither.
+ */
+export function testCaseIdOf(test: { tags: readonly string[]; title: string }): string | undefined {
+  for (const tag of test.tags) {
+    const match = TEST_CASE_TAG.exec(tag);
+    if (match) return match[1];
+  }
+  return TEST_CASE_TITLE.exec(test.title)?.[1];
 }
 
 /** Start time of the run that created a name, or undefined when the name has no run id. */

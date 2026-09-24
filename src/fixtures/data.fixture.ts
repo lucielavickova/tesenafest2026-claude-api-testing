@@ -10,16 +10,29 @@ import {
   type Task,
   type TodoistApi,
 } from '../clients';
-import { buildComment, buildLabel, buildProject, buildTask, type CommentTarget } from '../data';
+import {
+  buildComment,
+  buildLabel,
+  buildProject,
+  buildTask,
+  testCaseIdOf,
+  uniqueName,
+  type CommentTarget,
+} from '../data';
 import { apiTest } from './api.fixture';
 
 export type ResourceKind = 'project' | 'task' | 'label' | 'comment';
 
 /**
  * Creates test data and deletes it after the test, also when the test fails.
- * Everything is created through the real API with `autotest-<run id>-` names.
+ * Everything is created through the real API with `<TC ID>-autotest-<run id>-` names,
+ * so a leftover can be traced back to the test case that created it.
  */
 export interface TestData {
+  /** Test case ID from the test's `@TC-...` tag or title, for example `TC-002`. */
+  testCaseId: string | undefined;
+  /** `<TC ID>-autotest-<run id>-<kind>-<hex>`, for values the test builds itself. */
+  uniqueName(kind: string): string;
   createProject(overrides?: Partial<CreateProjectPayload>): Promise<Project>;
   createTask(overrides?: Partial<CreateTaskPayload>): Promise<Task>;
   createLabel(overrides?: Partial<CreateLabelPayload>): Promise<Label>;
@@ -38,31 +51,34 @@ interface Tracked {
 }
 
 export const dataTest = apiTest.extend<DataFixtures>({
-  testData: async ({ api }, use) => {
+  testData: async ({ api }, use, testInfo) => {
+    const testCaseId = testCaseIdOf(testInfo);
     const tracked: Tracked[] = [];
     const track = (kind: ResourceKind, id: string): void => {
       tracked.push({ kind, id });
     };
 
     await use({
+      testCaseId,
+      uniqueName: (kind) => uniqueName(kind, testCaseId),
       track,
       async createProject(overrides = {}) {
-        const project = await api.projects.create(buildProject(overrides));
+        const project = await api.projects.create(buildProject(overrides, testCaseId));
         track('project', project.id);
         return project;
       },
       async createTask(overrides = {}) {
-        const task = await api.tasks.create(buildTask(overrides));
+        const task = await api.tasks.create(buildTask(overrides, testCaseId));
         track('task', task.id);
         return task;
       },
       async createLabel(overrides = {}) {
-        const label = await api.labels.create(buildLabel(overrides));
+        const label = await api.labels.create(buildLabel(overrides, testCaseId));
         track('label', label.id);
         return label;
       },
       async createComment(target, overrides = {}) {
-        const payload: CreateCommentPayload = buildComment(target, overrides);
+        const payload: CreateCommentPayload = buildComment(target, overrides, testCaseId);
         const comment = await api.comments.create(payload);
         track('comment', comment.id);
         return comment;

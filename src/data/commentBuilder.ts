@@ -7,6 +7,7 @@ export type CommentTarget = { task_id: string } | { project_id: string };
 export function buildComment(
   target: CommentTarget,
   overrides: { content?: string } = {},
+  testCaseId?: string,
 ): CreateCommentPayload {
-  return { content: uniqueName('comment'), ...overrides, ...target };
+  return { content: uniqueName('comment', testCaseId), ...overrides, ...target };
 }

@@ -1,5 +1,5 @@
 import { ApiError, type TodoistApi } from '../clients';
-import { TEST_DATA_PREFIX, parseRunTimestamp } from './runId';
+import { isTestDataName, parseRunTimestamp } from './runId';
 
 /** Leftovers older than this are removed. Younger ones may belong to a run still in progress. */
 export const STALE_AFTER_MS = 60 * 60 * 1000;
@@ -11,11 +11,11 @@ export interface CleanupSummary {
 }
 
 /**
- * True for `autotest-` names older than {@link STALE_AFTER_MS}.
- * An `autotest-` name without a readable run id is treated as stale.
+ * True for test data names (`autotest-...` or `TC-002-autotest-...`) older than
+ * {@link STALE_AFTER_MS}. A test data name without a readable run id is treated as stale.
  */
 export function isStale(name: string, now: Date = new Date()): boolean {
-  if (!name.startsWith(TEST_DATA_PREFIX)) return false;
+  if (!isTestDataName(name)) return false;
   const createdAt = parseRunTimestamp(name);
   return createdAt === undefined || now.getTime() - createdAt.getTime() > STALE_AFTER_MS;
 }
