@@ -68,7 +68,7 @@ test('TC-002 A new task is created with the text that was entered', {
 ```
 
 - There is no login. The API token is sent as a Bearer header on every request.
-- `testData.create*` builds a unique `autotest-<run id>-` name and deletes the item after the test, also when it fails. Use `testData.track(kind, id)` for things created another way.
+- `testData.create*` builds a unique name such as `TC-002-autotest-20260924T101500Z-local-task-3f9a1c` (the test case ID from the `@TC-...` tag, then the run id) and deletes the item after the test, also when it fails. Use `testData.uniqueName(kind)` for values the test builds itself and `testData.track(kind, id)` for things created another way.
 - `api.<resource>.send(method, path, options)` returns the raw response, for status code checks.
 - `unauthenticatedApi` and `apiWithToken(token)` are for the negative auth tests.
 - `accountTimezone` (with `src/utils/dates.ts`) is the timezone for date assertions, not the runner's clock.
