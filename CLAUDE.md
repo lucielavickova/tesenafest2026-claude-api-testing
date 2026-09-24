@@ -43,5 +43,6 @@ npx playwright test --grep @TC-001                    # one test case by tag
 ## Git workflow
 
 - Issue, then branch `<issue id>-<short-description>`, then PR to `main`. Commit messages must start with `#<issue id> ` (enforced by the `commit-msg` hook). `pre-push` blocks pushes to `main`; `pre-commit` runs lint-staged.
+- Before any work on an issue, create your own git worktree with the issue branch, based on the latest `main`: `git fetch origin`, then `git worktree add ../tesenafest-<issue id> -b <issue id>-<short-description> origin/main`. Work only in that worktree, never in the main checkout or another agent's worktree, so parallel agents do not switch branches under each other. In the new worktree run `npm ci` (dependencies and husky hooks) and copy `.env` from the main checkout. Remove the worktree with `git worktree remove` after the PR is merged.
 - Fill in `.github/pull_request_template.md` (test cases, assumptions, checks).
 - Claude never merges PRs. Claude reviews its own PR and fixes the findings, then a human reviews and merges. Start the next issue only from the updated `main`. When a PR is ready, reply with the PR URL and a short summary.
