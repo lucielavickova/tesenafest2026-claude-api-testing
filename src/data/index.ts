@@ -5,8 +5,10 @@ export {
   TEST_DATA_PREFIX,
   createRunId,
   getRunId,
+  isTestDataName,
   parseRunTimestamp,
   runPrefix,
+  testCaseIdOf,
   uniqueName,
 } from './runId';
 export { buildTask } from './taskBuilder';
