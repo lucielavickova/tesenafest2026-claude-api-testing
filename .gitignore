@@ -13,3 +13,6 @@ playwright/.cache/
 
 # Written by scripts/report-flaky.mts in CI
 flaky-report.md
+
+# Local scratch files, for example HAR recordings with session cookies
+/temp/
