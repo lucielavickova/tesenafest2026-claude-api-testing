@@ -8,3 +8,6 @@ README.md
 brief.md
 Test Cases for automation.md
 docs/
+
+# Pinned OpenAPI snapshot, written by scripts/update-openapi.mts
+src/schemas/openapi.json
