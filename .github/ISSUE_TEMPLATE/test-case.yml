@@ -1,0 +1,93 @@
+name: Test case automation
+description: Automate a test case or add test coverage for the Todoist API.
+title: '[Test]: '
+labels: ['test', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Test cases are listed in `Test Cases for automation.md`. The OpenAPI spec is the
+        reference for expected behavior. Sections (and TC-010) are out of scope.
+
+  - type: input
+    id: test-case
+    attributes:
+      label: Test case ID
+      placeholder: TC-016
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Projects
+        - Tasks
+        - Labels
+        - Comments
+        - User
+        - End-to-end scenario
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Test case
+      description: What the test proves, from the user's point of view.
+      placeholder: A new task is created with the text that was entered
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps and expected result
+      placeholder: |
+        1. Create a task with content "autotest-..."
+        2. Load the task by its ID
+        Expected: the content matches, the response matches the schema
+    validations:
+      required: true
+
+  - type: textarea
+    id: assumptions
+    attributes:
+      label: Open questions and assumptions
+      description: Anything the spec does not define, for example the expected status code.
+    validations:
+      required: false
+
+  - type: input
+    id: spec
+    attributes:
+      label: API reference
+      description: Link to the endpoint in the API docs.
+      placeholder: https://developer.todoist.com/api/v1/#tag/Tasks
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: The matching `priority:` label is added automatically.
+      options:
+        - P0 - Critical (a pipeline is blocked or the API token may have leaked)
+        - P1 - High (task tests or smoke coverage)
+        - P2 - Medium (functional tests of other features)
+        - P3 - Low (nice to have)
+      default: 2
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: The feature is available on the free Todoist plan (otherwise the test is marked `test.fixme()` with the reason).
+          required: false
+        - label: The test case does not depend on sections.
+          required: true

@@ -1,0 +1,41 @@
+name: Issue priority label
+
+# Issue forms cannot add a label based on a dropdown answer, so this job reads the "Priority"
+# field from the issue body and sets the matching `priority:` label. Only the issue body is
+# read, and it is passed through an environment variable, never interpolated into the script.
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Set priority label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          CURRENT_LABELS: ${{ toJSON(github.event.issue.labels.*.name) }}
+        run: |
+          answer=$(printf '%s\n' "$ISSUE_BODY" | awk '/^### Priority/ { found = 1; next } found && NF { print; exit }')
+          level=$(printf '%s' "$answer" | grep -oE '^P[0-3]' || true)
+          if [ -z "$level" ]; then
+            echo "No priority in the issue body, nothing to do."
+            exit 0
+          fi
+
+          wanted="priority: $level"
+          args=(--add-label "$wanted")
+          while IFS= read -r label; do
+            case "$label" in
+              "priority: "*) [ "$label" != "$wanted" ] && args+=(--remove-label "$label") ;;
+            esac
+          done < <(printf '%s' "$CURRENT_LABELS" | jq -r '.[]')
+
+          gh issue edit "$ISSUE_NUMBER" "${args[@]}"
