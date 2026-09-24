@@ -23,5 +23,12 @@
     "noUnusedParameters": true,
     "useUnknownInCatchVariables": true
   },
-  "include": ["config/**/*.ts", "src/**/*.ts", "scripts/**/*.ts", "tests/**/*.ts", "*.ts"]
+  "include": [
+    "config/**/*.ts",
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "scripts/**/*.mts",
+    "tests/**/*.ts",
+    "*.ts"
+  ]
 }

@@ -20,6 +20,11 @@ export default tseslint.config(
     },
   },
   {
+    // Command line scripts report to the console. They print counts and locations, never values.
+    files: ['scripts/**'],
+    rules: { 'no-console': 'off' },
+  },
+  {
     files: ['**/*.{js,mjs,cjs}'],
     ...tseslint.configs.disableTypeChecked,
   },
