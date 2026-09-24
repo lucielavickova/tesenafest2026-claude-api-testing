@@ -7,6 +7,9 @@
 - Create **a free account** and use it for testing
 - API docs: [https://developer.todoist.com/openapi.json](https://developer.todoist.com/openapi.json)
 
+# Split into teams
+https://docs.google.com/spreadsheets/d/1sojXo_kTQdlSs79mieYC4lg28hxKNJhT-8dk8EhaDk4/edit?gid=1451532433#gid=1451532433
+
 ## Getting started
 
 Requirements: Node.js 24 (see `.nvmrc`) and npm.
