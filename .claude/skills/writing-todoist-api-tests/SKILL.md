@@ -22,8 +22,8 @@ nothing leaks, and what to run before calling it done.
    codes, error bodies and edge cases (is a nonsense `due_string` rejected or ignored?) are unknown.
    Never guess a status code. Probe once, then assert what the API returned and list it under
    "Assumptions" in the PR. See "Probing" below.
-4. **Write the test** starting from the closest existing spec (`tests/tasks/create-task.spec.ts`
-   for a single feature, `tests/e2e/complete-task.spec.ts` for a flow).
+4. **Write the test** starting from the closest existing spec in `tests/` (same resource, or
+   `tests/e2e/` for a flow). If there is none yet, build it from the patterns below.
 5. **Verify** (all must pass, show the output):
    ```sh
    npm run lint && npm run format:check && npm run typecheck
