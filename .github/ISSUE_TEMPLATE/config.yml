@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security issue
+    url: https://github.com/lucielavickova/tesenafest2026-claude-api-testing/security/advisories/new
+    about: For a leaked token or another vulnerability, report privately instead of opening an issue.
+  - name: Todoist API documentation
+    url: https://developer.todoist.com/api/v1/
+    about: Questions about how the Todoist API itself behaves.

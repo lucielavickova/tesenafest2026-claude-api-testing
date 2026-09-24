@@ -1,0 +1,117 @@
+name: Bug report
+description: A test fails, is flaky, or the framework or CI does not work as expected.
+title: '[Bug]: '
+labels: ['bug', 'needs-triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is **public**. Before you paste logs, traces or screenshots, check that
+        they do not contain `TODOIST_API_TOKEN` or any other secret.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, in one or two sentences.
+    validations:
+      required: true
+
+  - type: input
+    id: test-case
+    attributes:
+      label: Affected test case
+      description: Test case ID and spec file, if the bug is in a test.
+      placeholder: TC-002, tests/tasks/create-task.spec.ts
+    validations:
+      required: false
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it happened
+      multiple: true
+      options:
+        - Local run
+        - PR checks pipeline
+        - Hourly smoke pipeline
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: How often
+      options:
+        - Every run
+        - Intermittently (flaky)
+        - Once so far
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. TEST_ENV=prod npx playwright test tests/tasks
+        2. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+      description: What should happen. Link the OpenAPI spec if it defines the behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+
+  - type: input
+    id: run-link
+    attributes:
+      label: CI run
+      description: Link to the failed GitHub Actions run, if any.
+      placeholder: https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/runs/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant output only. It is formatted as code automatically.
+      render: shell
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: The matching `priority:` label is added automatically.
+      options:
+        - P0 - Critical (a pipeline is blocked or the API token may have leaked)
+        - P1 - High (task tests fail or report wrong results)
+        - P2 - Medium (other tests or tooling, with a workaround)
+        - P3 - Low (cosmetic, nice to have)
+      default: 2
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched the existing issues and this is not a duplicate.
+          required: true
+        - label: The logs, traces and screenshots above contain no API token or other secret.
+          required: true

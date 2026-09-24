@@ -1,0 +1,57 @@
+name: Task
+description: Framework, CI, tooling or documentation work that is not a bug or a test case.
+title: '[Task]: '
+labels: ['needs-triage']
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Framework (clients, fixtures, builders, schemas)
+        - CI pipeline
+        - Tooling (lint, format, hooks, scripts)
+        - Documentation
+        - Refactoring
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: What and why
+      description: What should change and what problem it solves.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Links, constraints, related issues.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: The matching `priority:` label is added automatically.
+      options:
+        - P0 - Critical (a pipeline is blocked or the API token may have leaked)
+        - P1 - High (blocks other work)
+        - P2 - Medium (planned work)
+        - P3 - Low (nice to have)
+      default: 2
+    validations:
+      required: true
