@@ -15,11 +15,13 @@ test(
       expect(created.id, 'id of the created project').toBeTruthy();
     });
 
-    await test.step('Load the project by its id and check its name', async () => {
+    await test.step('Load the project by its id and check its name and that it is active', async () => {
       const project = await api.projects.get(created.id);
       expect(project).toMatchSchema(Schema.project);
       expect(project.id).toBe(created.id);
       expect(project.name).toBe(name);
+      expect(project.is_deleted).toBe(false);
+      expect(project.is_archived).toBe(false);
     });
   },
 );
