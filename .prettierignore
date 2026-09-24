@@ -1,0 +1,10 @@
+package-lock.json
+playwright-report/
+test-results/
+blob-report/
+
+# Hand-written project docs, kept as authored
+README.md
+brief.md
+Test Cases for automation.md
+docs/
