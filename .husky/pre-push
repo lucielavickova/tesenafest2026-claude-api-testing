@@ -1,0 +1,8 @@
+# Block direct pushes to main. This only helps; GitHub branch protection is the real guard.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "pre-push: direct pushes to main are blocked. Push a branch and open a PR." >&2
+    exit 1
+  fi
+done
+exit 0

@@ -1,0 +1,15 @@
+node_modules/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Playwright output
+playwright-report/
+test-results/
+blob-report/
+playwright/.cache/
+
+# Written by scripts/report-flaky.mts in CI
+flaky-report.md
