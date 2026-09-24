@@ -27,14 +27,26 @@ const needle = Buffer.from(token);
 const leaks: string[] = [];
 let scanned = 0;
 
+// The HTML report embeds its data in index.html as a base64 zip data URL.
+const EMBEDDED_ZIP = /data:application\/zip;base64,([A-Za-z0-9+/=]+)/g;
+
 function scanBytes(data: Uint8Array, location: string): void {
   scanned++;
-  if (Buffer.from(data.buffer, data.byteOffset, data.byteLength).includes(needle)) {
+  const buffer = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  if (buffer.includes(needle)) {
     leaks.push(location);
   }
   if (isZip(data)) {
     for (const [name, content] of Object.entries(unzipSync(data))) {
       scanBytes(content, `${location} > ${name}`);
+    }
+  } else if (buffer.includes('data:application/zip;base64,')) {
+    let index = 0;
+    for (const match of buffer.toString('latin1').matchAll(EMBEDDED_ZIP)) {
+      scanBytes(
+        Buffer.from(match[1] ?? '', 'base64'),
+        `${location} > embedded zip ${String(index++)}`,
+      );
     }
   }
 }

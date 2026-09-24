@@ -28,6 +28,11 @@ export default class RedactReporter implements Reporter {
     return false;
   }
 
+  /** Errors outside of tests, for example from the global setup. */
+  onError(error: TestError): void {
+    if (this.secrets.length > 0) this.redactError(error);
+  }
+
   onTestEnd(_test: TestCase, result: TestResult): void {
     if (this.secrets.length === 0) return;
 
