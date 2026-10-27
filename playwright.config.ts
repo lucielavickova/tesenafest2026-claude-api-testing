@@ -14,8 +14,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  // At most 2 workers in CI, because all runs share one Todoist account. Locally Playwright decides.
-  ...(isCI && { workers: 2 }),
+  // 1 worker in CI: runs of different PRs may overlap on the shared Todoist account, and the
+  // free plan limits active projects. Locally Playwright decides.
+  ...(isCI && { workers: 1 }),
   reporter: [
     // The redaction reporter must stay first, see src/reporters/redact-reporter.ts.
     ['./src/reporters/redact-reporter.ts'],

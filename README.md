@@ -46,7 +46,7 @@ src/
   global-setup.ts       deletes `autotest-` data older than 1 hour
 scripts/                check-no-token, report-flaky, update-openapi
 tests/                  spec files, grouped by resource or suite
-.github/workflows/      pr.yml (every PR), smoke.yml (hourly @smoke on main)
+.github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
 ```
 
 ## Writing a test

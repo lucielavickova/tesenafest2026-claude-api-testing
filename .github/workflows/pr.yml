@@ -10,10 +10,13 @@ permissions:
   contents: read
   pull-requests: write # flaky test comment
 
-# All runs share one Todoist account, so PR and smoke runs never overlap.
+# One group per PR: a new push cancels the older run of the same PR, but PRs do not cancel
+# each other. A shared group would keep only one pending run and cancel the rest. Runs of
+# different PRs may overlap on the shared Todoist account; the data is isolated by run id
+# and CI uses 1 worker, so overlapping runs stay under the free plan project limit.
 concurrency:
-  group: todoist-account
-  cancel-in-progress: false
+  group: pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   checks:

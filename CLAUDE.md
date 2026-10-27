@@ -38,7 +38,7 @@ npx playwright test --grep @TC-001                    # one test case by tag
 - Name: `TC-xxx <test case name>`, tags `@TC-xxx` plus the suite tag (`@smoke`, `@regression`, `@e2e`, `@negative`, see the wave table in `brief.md`). Every step is a `test.step()` with a readable name. One behavior per test; multi-input cases get suffixes (`TC-015a`).
 - Sections and TC-010 are out of scope. Features missing on the free plan are `test.fixme()` with the reason.
 - Where the spec does not define the expected result, call the API first, assert the observed behavior and list it as an assumption in the PR description.
-- CI uses 1 worker and 1 retry (shared Todoist account); locally 0 retries.
+- CI uses 1 worker and 1 retry (shared Todoist account); locally 0 retries. Each PR has its own concurrency group, so runs of different PRs may overlap; keep tests isolated by run id and do not raise the CI worker count without checking the free plan project limit.
 
 ## Git workflow
 
