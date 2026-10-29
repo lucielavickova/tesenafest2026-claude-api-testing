@@ -97,7 +97,7 @@
 ## Pipelines (GitHub Actions)
 
 - **On every PR:** lint, format check, type check, then all tests.
-- **Once a day:** `@smoke` tests on `main`.
+- **Once a day at 13:20 Prague time:** `@smoke` tests on `main`.
   - If a scheduled run fails, the workflow opens a GitHub issue labeled `smoke-failure`,
     or comments on the existing open one. *(default)*
 - Runs share one Todoist account. Each PR has its own `concurrency` group, smoke runs have
