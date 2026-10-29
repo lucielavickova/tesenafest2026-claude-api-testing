@@ -82,6 +82,7 @@ tests/
 | `tests/labels/labels.spec.ts` | TC-004 | @smoke |
 | `tests/comments/comments.spec.ts` | TC-005 | @smoke |
 | `tests/e2e/project-lifecycle.spec.ts` | TC-011 | @e2e |
+| `tests/e2e/inbox-task.spec.ts` | TC-017 | @e2e |
 | `tests/negative/auth.spec.ts` | TC-014a/b | @negative |
 | `tests/negative/task-validation.spec.ts` | TC-015a/b/c | @negative |
 
