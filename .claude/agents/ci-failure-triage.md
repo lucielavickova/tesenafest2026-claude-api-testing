@@ -43,12 +43,13 @@ because later steps often fail as a consequence:
 | ------------------------------------------- | ---------------------------------------------------------- |
 | `npm ci`                                    | lockfile or registry problem                               |
 | `npm run lint`, `format:check`, `typecheck` | code in the PR (counts as a test bug)                      |
-| `Run unit tests`                            | framework code; no API and no token are involved           |
+| `Run unit tests`                            | framework code; no API and no token, only in the log       |
 | `Run tests`, `Run smoke tests`              | API tests; read the report and the traces                  |
 | `Check artifacts for the API token`         | the token was found in the report or traces: P0, see Rules |
 
 Exception: in `pr.yml`, `Run tests` runs even when `Run unit tests` failed, so read both; an API
-test failure there is not a consequence of the unit test failure.
+test failure there is not a consequence of the unit test failure. The report and the artifacts
+contain only the API tests, so a failed unit test is visible only in the log.
 
 From the Playwright output take the failed test titles, the `@TC-xxx` tags, the error messages
 and the `Retry #1` blocks. CI runs 1 retry, so a test that failed and then passed is flaky.
@@ -97,8 +98,7 @@ In `results.json`, walk `suites[].suites[]...specs[]`; each spec has `tests[]` w
     }' <dir>/*-trace.network
   ```
   The request body is in `snapshot.request.postData.text`, the response body in the file named by
-  `_file` (under `resources/`). Read those, never `snapshot.request.headers`. Traces of unit tests
-  have no network file, because unit tests do not call the API.
+  `_file` (under `resources/`). Read those, never `snapshot.request.headers`.
 
 ## 5. Classify
 
@@ -166,8 +166,7 @@ Title: [Bug]: <short summary>
 ### Affected test case
 <TC-xxx, spec file, or empty>
 ### Where it happened
-<PR checks pipeline | Hourly smoke pipeline | Local run>  (option names from the template;
-"Hourly smoke pipeline" is the daily smoke run)
+<PR checks pipeline | Daily smoke pipeline | Local run>
 ### How often
 <Every run | Intermittently (flaky) | Once so far>
 ### Steps to reproduce
