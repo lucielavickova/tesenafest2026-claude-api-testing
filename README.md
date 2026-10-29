@@ -98,18 +98,32 @@ tests/                  spec files, grouped by resource or suite
 ```ts
 import { expect, Schema, test } from '../../src/fixtures';
 
-test('TC-002 A new task is created with the text that was entered', {
-  tag: ['@TC-002', '@smoke'],
-}, async ({ api, testData }) => {
-  const created = await test.step('Create a task', () => testData.createTask({ content: 'autotest-...' }));
+test(
+  'TC-002 A new task is created with the text that was entered',
+  { tag: ['@TC-002', '@smoke'] },
+  async ({ api, testData }) => {
+    const content = testData.uniqueName('task');
 
-  await test.step('Load the task and check its text', async () => {
-    const task = await api.tasks.get(created.id);
-    expect(task).toMatchSchema(Schema.task);
-    expect(task.content).toBe(created.content);
-  });
-});
+    const created = await test.step('Create a task with unique content', () =>
+      testData.createTask({ content }));
+
+    await test.step('Check the create response', () => {
+      expect(created).toMatchSchema(Schema.task);
+      expect(created.id, 'id of the created task').toBeTruthy();
+      expect(created.content).toBe(content);
+    });
+
+    await test.step('Load the task by its ID and check it', async () => {
+      const loaded = await api.tasks.get(created.id);
+      expect(loaded).toMatchSchema(Schema.task);
+      expect(loaded.id).toBe(created.id);
+      expect(loaded.content).toBe(content);
+    });
+  },
+);
 ```
+
+This is [tests/tasks/create-task.spec.ts](tests/tasks/create-task.spec.ts). The test checks the create response and then loads the task again, because the response alone does not prove that the task was stored.
 
 - There is no login. The API token is sent as a Bearer header on every request.
 - `testData.create*` builds a unique name such as `TC-002-autotest-20260924T101500Z-local-task-3f9a1c` (the test case ID from the `@TC-...` tag, then the run id) and deletes the item after the test, also when it fails. Use `testData.uniqueName(kind)` for values the test builds itself and `testData.track(kind, id)` for things created another way.
