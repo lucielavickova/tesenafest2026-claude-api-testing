@@ -52,7 +52,8 @@ Then:
 1. Create your own copy with **Use this template** (or fork it).
 2. Create a free [Todoist](https://www.todoist.com) account and copy its API token from Settings > Integrations > Developer.
 3. Add the token as the `TODOIST_API_TOKEN` secret in your repository (Settings > Secrets and variables > Actions) and to your local `.env` (see Getting started).
-4. Open the repository in [Claude Code](https://claude.com/claude-code) and pick an open `test` issue, for example: `Work on issue #13. Follow CLAUDE.md and the writing-todoist-api-tests skill.`
+4. Turn on private vulnerability reporting in your repository (Settings > Advanced Security > Private vulnerability reporting). A copy does not inherit this setting. Then change the owner and repository name in the "Report a security issue" link in `.github/ISSUE_TEMPLATE/config.yml` to your own, otherwise a leaked token gets reported to the original repository.
+5. Open the repository in [Claude Code](https://claude.com/claude-code) and pick an open `test` issue, for example: `Work on issue #13. Follow CLAUDE.md and the writing-todoist-api-tests skill.`
 
 ## Getting started
 

@@ -1,5 +1,7 @@
 blank_issues_enabled: false
 contact_links:
+  # GitHub needs an absolute URL here. In a copy of this template, change the
+  # owner and repository name to your own, otherwise reports go to the original repo.
   - name: Report a security issue
     url: https://github.com/lucielavickova/tesenafest2026-claude-api-testing/security/advisories/new
     about: For a leaked token or another vulnerability, report privately instead of opening an issue.
