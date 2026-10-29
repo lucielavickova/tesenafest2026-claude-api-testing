@@ -35,6 +35,7 @@ export interface Project {
   id: string;
   name: string;
   description: string;
+  /** The spec types response colors as any string, only request bodies use the APIColorID enum. */
   color: string;
   parent_id: string | null;
   child_order: number;
@@ -81,7 +82,7 @@ export interface Task {
   content: string;
   description: string;
   labels: string[];
-  priority: number;
+  priority: Priority;
   due: Due | null;
   deadline: { date: string; lang?: string } | null;
   duration: { amount: number; unit: 'minute' | 'day' } | null;
@@ -144,6 +145,7 @@ export interface TaskListQuery {
 export interface Label {
   id: string;
   name: string;
+  /** The spec types response colors as any string, only request bodies use the APIColorID enum. */
   color: string;
   order: number | null;
   is_favorite: boolean;
