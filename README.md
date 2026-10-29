@@ -69,7 +69,9 @@ cp .env.example .env        # then fill in TODOIST_API_TOKEN
 | `npm run lint` | ESLint (typescript-eslint type-checked rules, eslint-plugin-playwright) |
 | `npm run format:check` | Prettier check (`npm run format` to fix) |
 | `npm run typecheck` | TypeScript strict type check |
-| `npm test` | All Playwright API tests |
+| `npm test` | All tests: unit tests of the framework and API tests |
+| `npm run test:unit` | Unit tests of the framework (`tests/unit/`). They do not call the API and do not need `TODOIST_API_TOKEN` |
+| `npm run test:api` | API tests only. The `setup` project deletes old test data first |
 | `npm run test:smoke` | Only tests tagged `@smoke` |
 
 - The environment is picked by `TEST_ENV` (default `prod`) from `config/<TEST_ENV>.ts`.
@@ -87,9 +89,10 @@ src/
   schemas/              pinned OpenAPI spec, Ajv validator, `toMatchSchema` matcher
   reporters/            reporter that redacts the token from traces and reports
   utils/                dates in the account timezone, redaction helpers
-  global-setup.ts       deletes `autotest-` data older than 1 hour
 scripts/                check-no-token, report-flaky, update-openapi
 tests/                  spec files, grouped by resource or suite
+  global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
+  unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
 .claude/skills/         skills for Claude Code
 .github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
 ```
