@@ -6,5 +6,5 @@ export function buildLabel(
   overrides: Partial<CreateLabelPayload> = {},
   testCaseId?: string,
 ): CreateLabelPayload {
-  return { name: uniqueName('label', testCaseId), ...overrides };
+  return { name: uniqueName(testCaseId), ...overrides };
 }

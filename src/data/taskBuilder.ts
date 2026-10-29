@@ -9,5 +9,5 @@ export function buildTask(
   overrides: Partial<CreateTaskPayload> = {},
   testCaseId?: string,
 ): CreateTaskPayload {
-  return { content: uniqueName('task', testCaseId), ...overrides };
+  return { content: uniqueName(testCaseId), ...overrides };
 }

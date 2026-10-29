@@ -34,8 +34,8 @@ export type ResourceKind = 'project' | 'task' | 'label' | 'comment';
 export interface TestData {
   /** Test case ID from the test's `@TC-...` tag or title, for example `TC-002`. */
   testCaseId: string | undefined;
-  /** `<TC ID>-autotest-<run id>-<kind>-<hex>`, for values the test builds itself. */
-  uniqueName(kind: string): string;
+  /** `<TC ID>-autotest-<run id>-w<worker>-<UTC time>`, for values the test builds itself. */
+  uniqueName(): string;
   createProject(overrides?: Partial<CreateProjectPayload>): Promise<Project>;
   createTask(overrides?: Partial<CreateTaskPayload>): Promise<Task>;
   createLabel(overrides?: Partial<CreateLabelPayload>): Promise<Label>;
@@ -105,7 +105,7 @@ export function createTestData(
 
   const testData: TestData = {
     testCaseId,
-    uniqueName: (kind) => uniqueName(kind, testCaseId),
+    uniqueName: () => uniqueName(testCaseId),
     track,
     async createProject(overrides = {}) {
       const payload = buildProject(overrides, testCaseId);
