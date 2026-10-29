@@ -10,13 +10,16 @@ permissions:
   contents: read
   pull-requests: write # flaky test comment
 
-# One group per PR: a new push cancels the older run of the same PR, but PRs do not cancel
-# each other. A shared group would keep only one pending run and cancel the rest. Runs of
-# different PRs may overlap on the shared Todoist account; the data is isolated by run id
-# and CI uses 1 worker, so overlapping runs stay under the free plan project limit.
+# One group per PR, so PRs do not cancel each other. A shared group would keep only one
+# pending run and cancel the rest. A running run is not cancelled: a cancelled run can skip
+# its cleanup and leave test projects for up to 1 hour (until global setup deletes them).
+# A new push replaces only the pending run of the same PR.
+# Runs of different PRs may overlap on the shared Todoist account. The data is isolated by
+# run id and CI uses 1 worker per run, but the free plan project limit is not guaranteed
+# when many PRs run at the same time.
 concurrency:
   group: pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   checks:
