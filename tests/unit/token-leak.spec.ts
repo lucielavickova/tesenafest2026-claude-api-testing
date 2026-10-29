@@ -1,0 +1,81 @@
+import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+
+import { expect, test } from '@playwright/test';
+
+// End-to-end check of the token redaction: a nested Playwright run with a fake token and a test
+// that fails on purpose (tests/unit/token-leak/), then scripts/check-no-token.mts on its report
+// and test results. The real token never reaches the nested run or the check.
+
+// Random, so it is not in the source: on CI Playwright adds the git diff to the HTML report, and a
+// literal from a changed file would be found there. A real token is never in the source.
+const FAKE_TOKEN = `fake-token-${randomBytes(16).toString('hex')}`;
+const ROOT = path.resolve(__dirname, '../..');
+
+/** Variables a Playwright worker sets. The nested run must not think it is a worker. */
+const WORKER_VARIABLES = ['PLAYWRIGHT_TEST', 'TEST_WORKER_INDEX', 'TEST_PARALLEL_INDEX'];
+
+/** The environment of this worker, with the fake token instead of the real one. */
+function childEnv(extra: Record<string, string>): NodeJS.ProcessEnv {
+  const env = Object.fromEntries(
+    Object.entries(process.env).filter(([name]) => !WORKER_VARIABLES.includes(name)),
+  );
+  return { ...env, TODOIST_API_TOKEN: FAKE_TOKEN, ...extra };
+}
+
+function run(args: string[], env: NodeJS.ProcessEnv) {
+  // spawnSync blocks the worker, so the test timeout cannot stop a hanging child. This can.
+  const result = spawnSync(process.execPath, args, {
+    cwd: ROOT,
+    env,
+    encoding: 'utf8',
+    timeout: 40_000,
+  });
+  return { status: result.status, output: `${result.stdout}\n${result.stderr}` };
+}
+
+/** Runs the failing test into `output` and returns the result of check-no-token on it. */
+function runAndCheck(output: string, redact: boolean) {
+  const env = childEnv({ LEAK_CHECK_OUTPUT: output, LEAK_CHECK_REDACT: redact ? '1' : '0' });
+  const nested = run(
+    [
+      require.resolve('@playwright/test/cli'),
+      'test',
+      '--config',
+      'tests/unit/token-leak/playwright.config.ts',
+    ],
+    env,
+  );
+  const reportDir = path.join(output, 'playwright-report');
+  const resultsDir = path.join(output, 'test-results');
+  const check = run(['scripts/check-no-token.mts', reportDir, resultsDir], env);
+  return { nested, check, reportDir, resultsDir };
+}
+
+test.describe('token redaction end to end', { tag: '@unit' }, () => {
+  // Two nested Playwright runs.
+  test.slow();
+
+  test('a failed test leaves no token in the report and the test results', () => {
+    const output = test.info().outputPath('redacted');
+    const { nested, check, resultsDir } = runAndCheck(output, true);
+
+    expect(nested.status, `the nested test fails on purpose\n${nested.output}`).toBe(1);
+    const traces = fs.readdirSync(resultsDir, { recursive: true, encoding: 'utf8' });
+    expect(traces.filter((file) => file.endsWith('trace.zip'))).toHaveLength(1);
+    expect(check.status, check.output).toBe(0);
+    expect(check.output).toContain('check-no-token: OK');
+  });
+
+  test('without the redaction reporter the check finds the token', () => {
+    const output = test.info().outputPath('not-redacted');
+    const { nested, check } = runAndCheck(output, false);
+
+    expect(nested.status, `the nested test fails on purpose\n${nested.output}`).toBe(1);
+    expect(check.status, check.output).toBe(1);
+    expect(check.output).toContain('trace.zip > ');
+    expect(check.output).toContain('index.html');
+  });
+});

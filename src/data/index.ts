@@ -6,7 +6,7 @@ export {
   createRunId,
   getRunId,
   isTestDataName,
-  parseRunTimestamp,
+  parseCreatedAt,
   runPrefix,
   testCaseIdOf,
   uniqueName,

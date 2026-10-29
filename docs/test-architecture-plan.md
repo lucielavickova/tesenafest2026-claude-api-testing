@@ -30,7 +30,7 @@ src/
     data.fixture.ts          tracked-resource fixtures that create and always delete (teardown runs on failure)
     user.fixture.ts          account timezone, worker scoped
   data/
-    runId.ts                 RUN_ID (GITHUB_RUN_ID or local timestamp) and prefix `autotest-<runId>-`
+    runId.ts                 RUN_ID (`gh<GITHUB_RUN_ID>` or `local`), prefix `autotest-<runId>-`, unique names
     projectBuilder.ts, taskBuilder.ts, labelBuilder.ts, commentBuilder.ts
   schemas/
     openapi.json             pinned snapshot of https://developer.todoist.com/openapi.json
@@ -38,7 +38,7 @@ src/
   utils/
     dates.ts                 "today/tomorrow in account tz" via Intl (no extra date lib unless needed)
     redact.ts                header redaction helper
-  global-setup.ts            deletes `autotest-` projects/labels (and tasks in Inbox) older than 1 hour
+  (tests/global.setup.ts)    deletes `autotest-` projects/labels (and tasks in Inbox) older than 1 hour
 scripts/
   update-openapi.ts          refreshes the pinned spec snapshot (manual, not in CI)
 tests/
@@ -54,8 +54,8 @@ tests/
 - **Base client.** `BaseClient` holds a `APIRequestContext` created with `baseURL` from config and `extraHTTPHeaders: { Authorization: 'Bearer ...' }`. Methods `get/post/delete` return parsed JSON typed as `T`; non-2xx throws `ApiError` unless the caller uses a `raw*` variant that returns the `APIResponse` (needed for negative tests TC-014/015). Resource clients are thin: one method per endpoint (`create`, `get`, `update`, `delete`, `list`, plus `close`/`reopen` on tasks). List endpoints in v1 are paginated (`{ results, next_cursor }`), so `BaseClient` gets a `listAll` helper.
 - **Schema validation.** Pin the OpenAPI spec in the repo (reproducible, reviewable diffs) and validate every successful response body against the matching component schema via Ajv. A custom `expect` matcher `toMatchSchema('<ComponentName>')` keeps tests readable. Exact component names are confirmed when the spec is pulled in (issue 3).
 - **Fixtures own setup and cleanup.** Data fixtures expose factory functions such as `createProject(overrides?)` that call the client, register the created id, and delete all registered ids in reverse order in teardown (fixture teardown runs on failure too). Deleting a project cascades its tasks and comments. Cleanup ignores 404 so tests that delete data themselves do not fail teardown.
-- **Test data.** Builders produce payloads with the `autotest-<runId>-` prefix plus a short random suffix, so parallel workers never collide. No shared data, no order dependency (`fullyParallel: true`).
-- **Global setup.** Lists projects and labels (and Inbox tasks), deletes those with the `autotest-` prefix whose run id timestamp or `created_at` is older than 1 hour. Protects the free plan project limit.
+- **Test data.** Builders produce payloads named `autotest-<runId>-w<worker>-<UTC time with ms>`, so parallel workers never collide. No shared data, no order dependency (`fullyParallel: true`).
+- **Global setup.** Lists projects and labels (and Inbox tasks), deletes those with the `autotest-` prefix whose time in the name is older than 1 hour. Protects the free plan project limit.
 - **Timezone-aware dates.** `user.fixture` reads the account timezone once per worker; `dates.ts` computes the expected calendar date in that zone (TC-003, TC-009, TC-013).
 - **Free plan check.** Before each wave, confirm features against the free plan (comments, labels, recurring due dates, reminders, etc.). Anything not available is `test.fixme(true, '<reason>')`.
 - **Security.**
@@ -63,7 +63,7 @@ tests/
   - `playwright.config.ts`: `trace: 'retain-on-failure'`, HTML reporter.
   - Redaction: traces record request headers, so the token is not passed via `extraHTTPHeaders` on the traced context alone. Implement redaction in a custom reporter/fixture step that rewrites the trace and report attachments, or (simpler and verified first in issue 2) send the token through a context whose trace capture excludes it. Issue 2 includes a spike that inspects a real trace zip and HTML report for the token string and adds an automated check (`scripts/check-no-token.ts`) that greps `playwright-report/` and `test-results/` for the token before artifacts are uploaded in CI. The CI step fails if found.
   - No `console.log` of config or headers; ApiError messages exclude headers.
-- **Config.** `playwright.config.ts`: `workers: CI ? 2 : undefined`, `retries: CI ? 1 : 0`, `globalSetup`, `use.baseURL` from `config/index.ts`. Strict `tsconfig.json` (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`). ESLint flat config with `typescript-eslint` (type-checked) and `eslint-plugin-playwright`. Prettier. npm scripts: `lint`, `format:check`, `typecheck`, `test`, `test:smoke`.
+- **Config.** `playwright.config.ts`: `workers: CI ? 2 : undefined`, `retries: CI ? 1 : 0`, `globalSetup` (later replaced by the `setup` project, so the `unit` project does not call the API, see issue #56), `use.baseURL` from `config/index.ts`. Strict `tsconfig.json` (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`). ESLint flat config with `typescript-eslint` (type-checked) and `eslint-plugin-playwright`. Prettier. npm scripts: `lint`, `format:check`, `typecheck`, `test`, `test:smoke`.
 
 ### Test design conventions
 

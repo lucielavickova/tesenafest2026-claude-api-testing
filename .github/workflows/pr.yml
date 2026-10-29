@@ -12,7 +12,7 @@ permissions:
 
 # One group per PR, so PRs do not cancel each other. A shared group would keep only one
 # pending run and cancel the rest. A running run is not cancelled: a cancelled run can skip
-# its cleanup and leave test projects for up to 1 hour (until global setup deletes them).
+# its cleanup and leave test projects for up to 1 hour (until the setup project deletes them).
 # A new push replaces only the pending run of the same PR.
 # Runs of different PRs may overlap on the shared Todoist account. The data is isolated by
 # run id and CI uses 1 worker per run, but the free plan project limit is not guaranteed
@@ -44,8 +44,15 @@ jobs:
 
       - run: npm run typecheck
 
-      # API tests only, so no browsers are installed.
+      # Unit tests of the framework, without the API token, for quick feedback. They include an
+      # end-to-end check of the token redaction with a fake token.
+      - name: Run unit tests
+        run: npm run test:unit
+
+      # All tests again (the unit tests take seconds), so the report and the flaky report cover
+      # both. Runs even when the unit tests failed. API tests only, so no browsers are installed.
       - name: Run tests
+        if: ${{ !cancelled() }}
         run: npm test
         env:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}

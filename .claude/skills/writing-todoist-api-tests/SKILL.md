@@ -32,6 +32,14 @@ nothing leaks, and what to run before calling it done.
 
 ## Patterns
 
+- **Three levels on every response:** 1) status code, 2) schema, 3) business values.
+  - Status: a typed method (`api.tasks.create`) throws on non-2xx, so a success is covered. When
+    the exact code matters (`204` on delete, `401`, `404`), use `send()` and
+    `expect(res.status()).toBe(204)`.
+  - Schema: see below. Skipped only for error bodies and empty `204` bodies.
+  - Business values: assert the values the test sent or expects (`toBe(name)`,
+    `toBe(project.id)`, `due?.date`), not `toBeTruthy()` alone. A test with a schema check only
+    is not done.
 - **Read back, not only the response.** After create/update/close, load the item again
   (`api.tasks.get(id)`) and assert the same fields. The response alone does not prove it was stored.
 - **Schema on every successful body:** `expect(x).toMatchSchema(Schema.task)`.
@@ -56,7 +64,8 @@ nothing leaks, and what to run before calling it done.
 - "Required field missing": take the field from `required` of the request body in
   `src/schemas/openapi.json`, not from memory.
 - Error bodies have no schema in the spec. Assert the status, and a body field only if the
-  probe showed it. Do not invent an error shape.
+  probe showed it. Do not invent an error shape. Level 3 (business values) of a negative test is
+  the proof that nothing was created or changed.
 - If the probe shows the API **accepts** the input (for example a nonsense `due_string`), the test
   asserts what happens instead, its title says so, and the PR lists it as an assumption and a
   possible bug. Do not keep a "rejected" test that is known to fail.

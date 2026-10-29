@@ -5,7 +5,7 @@ test(
   'TC-002 A new task is created with the text that was entered',
   { tag: ['@TC-002', '@smoke'] },
   async ({ api, testData }) => {
-    const content = testData.uniqueName('task');
+    const content = testData.uniqueName();
 
     const created = await test.step('Create a task with unique content', () =>
       testData.createTask({ content }));
