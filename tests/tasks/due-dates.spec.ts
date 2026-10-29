@@ -46,7 +46,8 @@ test(
   async ({ api, testData, accountTimezone }) => {
     // "every day" starts today in the account timezone and closing it moves it to tomorrow.
     // Close to midnight the day can change between the calls, so the test is skipped when
-    // "today" moved during the test (same guard as TC-009).
+    // "today" moved during the test (same guard as TC-009). The create response is asserted
+    // after that guard, not right after the create.
     const today = todayIn(accountTimezone);
     const tomorrow = addDays(today, 1);
 
@@ -56,7 +57,10 @@ test(
     const created = await test.step('Create a task due "every day" in the project', () =>
       testData.createTask({ project_id: project.id, due_string: 'every day', due_lang: 'en' }));
 
-    await test.step('Close the recurring task', () => api.tasks.close(created.id));
+    await test.step('Close the recurring task and check that the API answers 204', async () => {
+      const res = await api.tasks.send('POST', `tasks/${created.id}/close`);
+      expect(res.status()).toBe(204);
+    });
 
     // eslint-disable-next-line playwright/no-skipped-test -- runtime guard for the midnight case
     test.skip(
