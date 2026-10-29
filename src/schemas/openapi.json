@@ -11160,11 +11160,17 @@
             ]
           },
           "priority": {
-            "type": "integer",
+            "type": "string",
             "title": "Priority",
-            "description": "Task priority from 1 (normal) to 4 (urgent).",
+            "description": "Task priority from p1 (urgent) to p4 (normal).",
+            "enum": [
+              "p1",
+              "p2",
+              "p3",
+              "p4"
+            ],
             "examples": [
-              1
+              "p4"
             ]
           },
           "child_order": {
