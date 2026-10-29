@@ -25,6 +25,7 @@ The walk-through of this repo (in Czech) is the webinar [Test automation framewo
 | 4. Rules and guardrails | Decided the rules | Wrote them down in templates, `CLAUDE.md` and git hooks | PRs #10, #26, #30, #32 |
 | 5. Tests | Picked the test cases, reviewed each test | Implemented one test case per issue and PR | PRs #27 and #28 |
 | 6. Skill | Asked Claude to turn what worked into a reusable workflow | Wrote the skill for adding new tests | PR #34, [.claude/skills/writing-todoist-api-tests](.claude/skills/writing-todoist-api-tests/SKILL.md) |
+| 7. Subagent | Asked for a read-only helper that explains why a CI run failed | Wrote the agent that reads the log, the report and the traces and drafts a Bug report | PR #76, [.claude/agents/ci-failure-triage](.claude/agents/ci-failure-triage.md) |
 
 ### The rules the agent works by
 
@@ -34,6 +35,17 @@ The walk-through of this repo (in Czech) is the webinar [Test automation framewo
 - **One git worktree per agent**, so several agents can work on different issues in parallel without switching branches under each other.
 - **Expected behavior is probed, not guessed.** Where the spec does not say what the API returns, the test asserts the observed behavior and the PR lists it as an assumption.
 - All of this is in [CLAUDE.md](CLAUDE.md). [AGENTS.md](AGENTS.md) points other coding agents to the same file.
+
+### Skills and subagents
+
+Both are instructions for Claude Code in `.claude/`. The difference is who decides during the work and what you see.
+
+- **A skill works with you.** It loads into the current conversation. You see every step and can step in: "not this assert, check the status code". Use it when the result is a change in the code and you want to stay in control. Example: [writing-todoist-api-tests](.claude/skills/writing-todoist-api-tests/SKILL.md), the workflow for adding a test.
+- **A subagent works on its own and reports back.** It gets the task, runs in its own context with its own tools, and returns only the result. The long logs and traces stay out of your conversation. Use it when the way to the result is long and noisy and you only need the conclusion. Example: [ci-failure-triage](.claude/agents/ci-failure-triage.md). It has no Edit or Write tool, and its instructions forbid fixes, commits, pushes and new issues.
+
+The two work together. When CI fails, ask Claude why: the `ci-failure-triage` agent reads the failed run and returns a category, the evidence and a draft Bug report, for example "test bug: TC-007 compares the date in UTC instead of the account timezone". Then you decide what to do, and fix the test in the main conversation with the `writing-todoist-api-tests` skill, step by step.
+
+When the same know-how is needed in both places, for example how to read our traces without printing the token, it can move into a skill that the agent loads with the `skills:` field.
 
 ## Try it yourself
 
