@@ -34,7 +34,7 @@ body:
       options:
         - Local run
         - PR checks pipeline
-        - Hourly smoke pipeline
+        - Daily smoke pipeline
     validations:
       required: true
 
