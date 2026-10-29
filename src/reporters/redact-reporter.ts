@@ -38,8 +38,12 @@ export default class RedactReporter implements Reporter {
     if (this.secrets.length > 0) this.redactTitle(step);
   }
 
-  onTestEnd(_test: TestCase, result: TestResult): void {
+  onTestEnd(test: TestCase, result: TestResult): void {
     if (this.secrets.length === 0) return;
+
+    // The HTML and JSON reporters show both, for example a skip reason.
+    this.redactAnnotations(test.annotations);
+    this.redactAnnotations(result.annotations);
 
     for (const attachment of result.attachments) {
       if (attachment.body) {
@@ -93,10 +97,19 @@ export default class RedactReporter implements Reporter {
 
   private redactStep(step: TestStep): void {
     this.redactTitle(step);
+    this.redactAnnotations(step.annotations);
     if (step.error) this.redactError(step.error);
     step.steps.forEach((child) => {
       this.redactStep(child);
     });
+  }
+
+  private redactAnnotations(annotations: TestCase['annotations']): void {
+    for (const annotation of annotations) {
+      if (annotation.description !== undefined) {
+        annotation.description = redact(annotation.description, this.secrets);
+      }
+    }
   }
 
   private redactTitle(step: TestStep): void {

@@ -38,7 +38,7 @@ src/
   utils/
     dates.ts                 "today/tomorrow in account tz" via Intl (no extra date lib unless needed)
     redact.ts                header redaction helper
-  global-setup.ts            deletes `autotest-` projects/labels (and tasks in Inbox) older than 1 hour
+  (tests/global.setup.ts)    deletes `autotest-` projects/labels (and tasks in Inbox) older than 1 hour
 scripts/
   update-openapi.ts          refreshes the pinned spec snapshot (manual, not in CI)
 tests/

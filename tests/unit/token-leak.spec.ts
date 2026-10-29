@@ -31,7 +31,7 @@ function run(args: string[], env: NodeJS.ProcessEnv) {
     cwd: ROOT,
     env,
     encoding: 'utf8',
-    timeout: 60_000,
+    timeout: 40_000,
   });
   return { status: result.status, output: `${result.stdout}\n${result.stderr}` };
 }

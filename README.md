@@ -89,10 +89,9 @@ src/
   schemas/              pinned OpenAPI spec, Ajv validator, `toMatchSchema` matcher
   reporters/            reporter that redacts the token from traces and reports
   utils/                dates in the account timezone, redaction helpers
-  global-setup.ts       deletes `autotest-` data older than 1 hour
 scripts/                check-no-token, report-flaky, update-openapi
 tests/                  spec files, grouped by resource or suite
-  global.setup.ts       setup project, runs global-setup.ts before the API tests
+  global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
   unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
 .claude/skills/         skills for Claude Code
 .github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)

@@ -14,6 +14,7 @@ import { FAKE_TOKEN as SECRET, restoreEnvAfterEach } from './env';
 /** The parts of a test result the reporter changes. */
 function resultWith(parts: Partial<TestResult>): TestResult {
   return {
+    annotations: [],
     attachments: [],
     errors: [],
     steps: [],
@@ -23,7 +24,10 @@ function resultWith(parts: Partial<TestResult>): TestResult {
   } as unknown as TestResult;
 }
 
-const anyTest = {} as TestCase;
+/** A test whose annotations the reporter changes. */
+function testWith(annotations: TestCase['annotations'] = []): TestCase {
+  return { annotations } as unknown as TestCase;
+}
 
 test.describe('RedactReporter', { tag: '@unit' }, () => {
   restoreEnvAfterEach('TODOIST_API_TOKEN');
@@ -44,7 +48,7 @@ test.describe('RedactReporter', { tag: '@unit' }, () => {
     );
 
     new RedactReporter().onTestEnd(
-      anyTest,
+      testWith(),
       resultWith({
         attachments: [{ name: 'trace', contentType: 'application/zip', path: tracePath }],
       }),
@@ -66,7 +70,7 @@ test.describe('RedactReporter', { tag: '@unit' }, () => {
     fs.writeFileSync(tracePath, original);
 
     new RedactReporter().onTestEnd(
-      anyTest,
+      testWith(),
       resultWith({
         attachments: [{ name: 'trace', contentType: 'application/zip', path: tracePath }],
       }),
@@ -75,31 +79,46 @@ test.describe('RedactReporter', { tag: '@unit' }, () => {
     expect(fs.readFileSync(tracePath).equals(Buffer.from(original))).toBe(true);
   });
 
-  test('redacts attachments, errors, steps and output', () => {
+  test('redacts attachments, errors, steps, annotations and output', () => {
     const textPath = test.info().outputPath('log.txt');
     fs.writeFileSync(textPath, `token=${SECRET}`);
     const error = { message: `got ${SECRET}`, cause: { stack: `at ${SECRET}` } };
     const stepError = { value: SECRET };
-    const step = { title: `Call with ${SECRET}`, steps: [], error: stepError };
+    const step = {
+      title: `Call with ${SECRET}`,
+      annotations: [{ type: 'info', description: `step ${SECRET}` }],
+      steps: [],
+      error: stepError,
+    };
+    const testCase = testWith([{ type: 'skip', description: `needs ${SECRET}` }, { type: 'slow' }]);
     const result = resultWith({
+      annotations: [{ type: 'request', description: `Bearer ${SECRET}` }],
       attachments: [
         { name: 'body', contentType: 'text/plain', body: Buffer.from(`a ${SECRET}`) },
         { name: 'log', contentType: 'text/plain', path: textPath },
       ],
       errors: [error],
       error,
-      steps: [{ title: 'Outer step', steps: [step] }] as unknown as TestResult['steps'],
+      steps: [
+        { title: 'Outer step', annotations: [], steps: [step] },
+      ] as unknown as TestResult['steps'],
       stdout: [`out ${SECRET}`, Buffer.from(`buffer ${SECRET}`)],
       stderr: [`err ${SECRET}`],
     });
 
-    new RedactReporter().onTestEnd(anyTest, result);
+    new RedactReporter().onTestEnd(testCase, result);
 
     expect(result.attachments[0]?.body?.toString()).toBe(`a ${REDACTED}`);
     expect(fs.readFileSync(textPath, 'utf8')).toBe(`token=${REDACTED}`);
     expect(error).toEqual({ message: `got ${REDACTED}`, cause: { stack: `at ${REDACTED}` } });
     expect(step.title).toBe(`Call with ${REDACTED}`);
     expect(stepError.value).toBe(REDACTED);
+    expect(step.annotations).toEqual([{ type: 'info', description: `step ${REDACTED}` }]);
+    expect(testCase.annotations).toEqual([
+      { type: 'skip', description: `needs ${REDACTED}` },
+      { type: 'slow' },
+    ]);
+    expect(result.annotations).toEqual([{ type: 'request', description: `Bearer ${REDACTED}` }]);
     expect(result.stdout.map(String)).toEqual([`out ${REDACTED}`, `buffer ${REDACTED}`]);
     expect(result.stderr).toEqual([`err ${REDACTED}`]);
   });

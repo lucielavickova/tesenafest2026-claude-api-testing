@@ -10,7 +10,7 @@ const RUN_TIMESTAMP = /^(?:TC-\d+[a-z]?-)?autotest-(\d{4})(\d{2})(\d{2})T(\d{2})
 
 /**
  * Builds a run id such as `20260924T101500Z-gh12345678` (CI) or `20260924T101500Z-local`.
- * The UTC start time comes first, so the global setup can tell how old leftover data is,
+ * The UTC start time comes first, so the setup project can tell how old leftover data is,
  * even for labels, which have no creation date in the API.
  */
 export function createRunId(now: Date = new Date()): string {
