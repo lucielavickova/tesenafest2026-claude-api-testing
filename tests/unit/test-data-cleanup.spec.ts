@@ -26,12 +26,19 @@ function fakeApi() {
   const items: Record<Kind, StoredItem[]> = { projects: [], tasks: [], labels: [], comments: [] };
   const failures: Partial<Record<Kind, { error: Error; stored: Stored } | undefined>> = {};
   const late: [Kind, StoredItem][] = [];
-  const listCalls: Record<Kind, number> = { projects: 0, tasks: 0, labels: 0, comments: 0 };
+  const listCalls: Record<Kind, Partial<StoredItem>[]> = {
+    projects: [],
+    tasks: [],
+    labels: [],
+    comments: [],
+  };
   let nextId = 1;
 
   const client = (kind: Kind) => ({
     create: (payload: Omit<StoredItem, 'id'>) => {
-      const item = { id: String(nextId++), ...payload };
+      // The API puts a task without a project or parent into the Inbox.
+      const inInbox = kind === 'tasks' && !payload.project_id && !payload.task_id;
+      const item = { id: String(nextId++), ...payload, ...(inInbox && { project_id: 'inbox' }) };
       const failure = failures[kind];
       failures[kind] = undefined;
       if (failure?.stored === 'later') late.push([kind, item]);
@@ -39,7 +46,7 @@ function fakeApi() {
       return failure ? Promise.reject(failure.error) : Promise.resolve(item);
     },
     list: (query: Partial<StoredItem> = {}) => {
-      listCalls[kind]++;
+      listCalls[kind].push(query);
       const filters = Object.entries(query) as [keyof StoredItem, string][];
       return Promise.resolve(
         items[kind].filter((item) => filters.every(([key, value]) => item[key] === value)),
@@ -58,6 +65,7 @@ function fakeApi() {
     tasks: client('tasks'),
     labels: client('labels'),
     comments: client('comments'),
+    user: { get: () => Promise.resolve({ inbox_project_id: 'inbox' }) },
   } as unknown as TodoistApi;
 
   return {
@@ -136,6 +144,28 @@ test.describe('testData cleanup after a failed create', { tag: '@unit' }, () => 
     expect(fake.items.tasks).toHaveLength(0);
   });
 
+  test('an Inbox task stored without a response is looked up in the Inbox only', async () => {
+    const fake = fakeApi();
+    const { testData, cleanUp } = createTestData(fake.api, 'TC-002');
+    fake.failNext('tasks', noResponse('tasks'));
+
+    await expect(testData.createTask()).rejects.toThrow(RequestFailedError);
+    await cleanUp();
+
+    expect(fake.listCalls.tasks).toEqual([{ project_id: 'inbox' }]);
+    expect(fake.items.tasks).toHaveLength(0);
+  });
+
+  test('a lookup that gets 404 is not a cleanup failure', async () => {
+    const fake = fakeApi();
+    const { testData, cleanUp } = createTestData(fake.api, 'TC-003');
+    fake.failNext('comments', noResponse('comments'), 'never');
+    await expect(testData.createComment({ task_id: 'gone' })).rejects.toThrow(RequestFailedError);
+    fake.api.comments.list = () => Promise.reject(new ApiError(404, 'GET', 'comments', ''));
+
+    await expect(cleanUp()).resolves.toBeUndefined();
+  });
+
   test('a 4xx is not followed by a lookup', async () => {
     const fake = fakeApi();
     const { testData, cleanUp } = createTestData(fake.api, 'TC-001');
@@ -144,7 +174,7 @@ test.describe('testData cleanup after a failed create', { tag: '@unit' }, () => 
     await expect(testData.createProject()).rejects.toThrow(ApiError);
     await cleanUp();
 
-    expect(fake.listCalls.projects).toBe(0);
+    expect(fake.listCalls.projects).toHaveLength(0);
   });
 
   test('a name without the autotest- prefix is not looked up', async () => {
@@ -157,7 +187,7 @@ test.describe('testData cleanup after a failed create', { tag: '@unit' }, () => 
     );
     await cleanUp();
 
-    expect(fake.listCalls.projects).toBe(0);
+    expect(fake.listCalls.projects).toHaveLength(0);
     expect(fake.items.projects).toHaveLength(1);
   });
 

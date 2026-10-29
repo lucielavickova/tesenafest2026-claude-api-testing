@@ -19,7 +19,7 @@ npm run test:smoke      # only @smoke
 
 npx playwright test tests/projects/projects.spec.ts   # one file
 npx playwright test --grep @TC-001                    # one test case by tag
-npx playwright test tests/unit                        # unit tests of the framework (@unit, fake API)
+npx playwright test tests/unit                        # unit tests of the framework (@unit, fake API; global setup still needs the token)
 ```
 
 - `TEST_ENV` selects `config/<TEST_ENV>.ts` (default `prod`). New environments are a new file registered in `config/index.ts`, nothing more.
@@ -36,7 +36,7 @@ npx playwright test tests/unit                        # unit tests of the framew
 
 ## Test conventions
 
-- Unit tests of the framework itself go to `tests/unit/` with the `@unit` tag and no TC ID. They import `test` from `@playwright/test` and use a fake `TodoistApi`, see `tests/unit/test-data-cleanup.spec.ts`.
+- Unit tests of the framework itself go to `tests/unit/` with the `@unit` tag and no TC ID. They import `test` from `@playwright/test`, use a fake `TodoistApi` and need `test.step()` only where it makes the report clearer, see `tests/unit/test-data-cleanup.spec.ts`.
 - Name: `TC-xxx <test case name>`, tags `@TC-xxx` plus the suite tag (`@smoke`, `@regression`, `@e2e`, `@negative`, see the wave table in `brief.md`). Every step is a `test.step()` with a readable name. One behavior per test; multi-input cases get suffixes (`TC-015a`).
 - Sections and TC-010 are out of scope. Features missing on the free plan are `test.fixme()` with the reason.
 - Where the spec does not define the expected result, call the API first, assert the observed behavior and list it as an assumption in the PR description.

@@ -9,6 +9,7 @@ import {
   type Label,
   type Project,
   type Task,
+  type TaskListQuery,
   type TodoistApi,
 } from '../clients';
 import {
@@ -75,8 +76,8 @@ export function createTestData(
   /**
    * Creates an item and registers it for cleanup. If the request gets no response or a 5xx,
    * the server may still have stored the item. Then a lookup by the name that was sent is
-   * registered instead, and the error is rethrown. The lookup runs at cleanup, so an item
-   * that the server stores after the client gave up is found too.
+   * registered instead, and the error is rethrown. The lookup runs at cleanup, so it also finds
+   * an item that the server stores later, as long as that happens before the test ends.
    */
   async function createAndTrack<T extends { id: string }>(
     kind: ResourceKind,
@@ -117,18 +118,23 @@ export function createTestData(
     },
     async createTask(overrides = {}) {
       const payload = buildTask(overrides, testCaseId);
-      // Without `parent_id` and `project_id` the task is in the Inbox, so all tasks are listed.
-      const query = payload.parent_id
-        ? { parent_id: payload.parent_id }
-        : payload.project_id
-          ? { project_id: payload.project_id }
-          : {};
+      // Without `parent_id` and `project_id` the task goes to the Inbox.
+      const inboxQuery = async (): Promise<TaskListQuery> => {
+        const { inbox_project_id: inboxId } = await api.user.get();
+        return inboxId === null ? {} : { project_id: inboxId };
+      };
       return createAndTrack(
         'task',
         payload.content,
         () => api.tasks.create(payload),
-        async () =>
-          (await api.tasks.list(query)).map((task) => ({ id: task.id, name: task.content })),
+        async () => {
+          const query = payload.parent_id
+            ? { parent_id: payload.parent_id }
+            : payload.project_id
+              ? { project_id: payload.project_id }
+              : await inboxQuery();
+          return (await api.tasks.list(query)).map((task) => ({ id: task.id, name: task.content }));
+        },
       );
     },
     async createLabel(overrides = {}) {
@@ -165,7 +171,8 @@ function mayHaveBeenStored(error: unknown): boolean {
 
 /**
  * Deletes in reverse order of creation (comments before tasks before projects).
- * 404 is fine: the test may have deleted the item, or a deleted project took its tasks along.
+ * 404 is fine, for deletes and lookups: the test may have deleted the item, or a deleted project
+ * took its tasks along.
  * Other errors are collected, so one failure does not leave the rest behind.
  */
 async function cleanUp(api: TodoistApi, tracked: readonly Tracked[]): Promise<void> {
@@ -175,6 +182,7 @@ async function cleanUp(api: TodoistApi, tracked: readonly Tracked[]): Promise<vo
     try {
       ids = 'id' in entry ? [entry.id] : await entry.find();
     } catch (error) {
+      if (error instanceof ApiError && error.status === 404) continue;
       failures.push(`${entry.kind} lookup: ${messageOf(error)}`);
       continue;
     }
