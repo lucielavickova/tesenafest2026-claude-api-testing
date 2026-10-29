@@ -1,5 +1,6 @@
 import {
   ApiError,
+  RequestFailedError,
   type Comment,
   type CreateCommentPayload,
   type CreateLabelPayload,
@@ -15,6 +16,7 @@ import {
   buildLabel,
   buildProject,
   buildTask,
+  isTestDataName,
   testCaseIdOf,
   uniqueName,
   type CommentTarget,
@@ -45,49 +47,121 @@ export interface DataFixtures {
   testData: TestData;
 }
 
-interface Tracked {
-  kind: ResourceKind;
-  id: string;
-}
+/** An item to delete: by id, or by a lookup that runs at cleanup (see `createAndTrack`). */
+type Tracked =
+  { kind: ResourceKind; id: string } | { kind: ResourceKind; find: () => Promise<string[]> };
 
 export const dataTest = apiTest.extend<DataFixtures>({
   testData: async ({ api }, use, testInfo) => {
-    const testCaseId = testCaseIdOf(testInfo);
-    const tracked: Tracked[] = [];
-    const track = (kind: ResourceKind, id: string): void => {
-      tracked.push({ kind, id });
-    };
-
-    await use({
-      testCaseId,
-      uniqueName: (kind) => uniqueName(kind, testCaseId),
-      track,
-      async createProject(overrides = {}) {
-        const project = await api.projects.create(buildProject(overrides, testCaseId));
-        track('project', project.id);
-        return project;
-      },
-      async createTask(overrides = {}) {
-        const task = await api.tasks.create(buildTask(overrides, testCaseId));
-        track('task', task.id);
-        return task;
-      },
-      async createLabel(overrides = {}) {
-        const label = await api.labels.create(buildLabel(overrides, testCaseId));
-        track('label', label.id);
-        return label;
-      },
-      async createComment(target, overrides = {}) {
-        const payload: CreateCommentPayload = buildComment(target, overrides, testCaseId);
-        const comment = await api.comments.create(payload);
-        track('comment', comment.id);
-        return comment;
-      },
-    });
-
-    await cleanUp(api, tracked);
+    const { testData, cleanUp } = createTestData(api, testCaseIdOf(testInfo));
+    await use(testData);
+    await cleanUp();
   },
 });
+
+/**
+ * The `testData` fixture without Playwright, so its logic can be tested with a mocked `api`.
+ * `cleanUp` deletes everything the test data created or tracked.
+ */
+export function createTestData(
+  api: TodoistApi,
+  testCaseId: string | undefined,
+): { testData: TestData; cleanUp: () => Promise<void> } {
+  const tracked: Tracked[] = [];
+  const track = (kind: ResourceKind, id: string): void => {
+    tracked.push({ kind, id });
+  };
+
+  /**
+   * Creates an item and registers it for cleanup. If the request gets no response or a 5xx,
+   * the server may still have stored the item. Then a lookup by the name that was sent is
+   * registered instead, and the error is rethrown. The lookup runs at cleanup, so an item
+   * that the server stores after the client gave up is found too.
+   */
+  async function createAndTrack<T extends { id: string }>(
+    kind: ResourceKind,
+    name: string,
+    create: () => Promise<T>,
+    list: () => Promise<readonly { id: string; name: string }[]>,
+  ): Promise<T> {
+    try {
+      const item = await create();
+      track(kind, item.id);
+      return item;
+    } catch (error) {
+      // A 4xx means the server rejected the item. Only `autotest-` names are looked up, so a
+      // lookup can never delete data that the tests did not create.
+      if (mayHaveBeenStored(error) && isTestDataName(name)) {
+        tracked.push({
+          kind,
+          find: async () =>
+            (await list()).filter((item) => item.name === name).map((item) => item.id),
+        });
+      }
+      throw error;
+    }
+  }
+
+  const testData: TestData = {
+    testCaseId,
+    uniqueName: (kind) => uniqueName(kind, testCaseId),
+    track,
+    async createProject(overrides = {}) {
+      const payload = buildProject(overrides, testCaseId);
+      return createAndTrack(
+        'project',
+        payload.name,
+        () => api.projects.create(payload),
+        () => api.projects.list(),
+      );
+    },
+    async createTask(overrides = {}) {
+      const payload = buildTask(overrides, testCaseId);
+      // Without `parent_id` and `project_id` the task is in the Inbox, so all tasks are listed.
+      const query = payload.parent_id
+        ? { parent_id: payload.parent_id }
+        : payload.project_id
+          ? { project_id: payload.project_id }
+          : {};
+      return createAndTrack(
+        'task',
+        payload.content,
+        () => api.tasks.create(payload),
+        async () =>
+          (await api.tasks.list(query)).map((task) => ({ id: task.id, name: task.content })),
+      );
+    },
+    async createLabel(overrides = {}) {
+      const payload = buildLabel(overrides, testCaseId);
+      return createAndTrack(
+        'label',
+        payload.name,
+        () => api.labels.create(payload),
+        () => api.labels.list(),
+      );
+    },
+    async createComment(target, overrides = {}) {
+      const payload: CreateCommentPayload = buildComment(target, overrides, testCaseId);
+      return createAndTrack(
+        'comment',
+        payload.content,
+        () => api.comments.create(payload),
+        async () =>
+          (await api.comments.list(target)).map((comment) => ({
+            id: comment.id,
+            name: comment.content,
+          })),
+      );
+    },
+  };
+
+  return { testData, cleanUp: () => cleanUp(api, tracked) };
+}
+
+/** No response, or a 5xx that the server may have sent after it stored the item. */
+function mayHaveBeenStored(error: unknown): boolean {
+  return error instanceof RequestFailedError || (error instanceof ApiError && error.status >= 500);
+}
 
 /**
  * Deletes in reverse order of creation (comments before tasks before projects).
@@ -96,12 +170,21 @@ export const dataTest = apiTest.extend<DataFixtures>({
  */
 async function cleanUp(api: TodoistApi, tracked: readonly Tracked[]): Promise<void> {
   const failures: string[] = [];
-  for (const { kind, id } of [...tracked].reverse()) {
+  for (const entry of [...tracked].reverse()) {
+    let ids: string[];
     try {
-      await deleteResource(api, kind, id);
+      ids = 'id' in entry ? [entry.id] : await entry.find();
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) continue;
-      failures.push(`${kind} ${id}: ${error instanceof Error ? error.message : String(error)}`);
+      failures.push(`${entry.kind} lookup: ${messageOf(error)}`);
+      continue;
+    }
+    for (const id of ids) {
+      try {
+        await deleteResource(api, entry.kind, id);
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 404) continue;
+        failures.push(`${entry.kind} ${id}: ${messageOf(error)}`);
+      }
     }
   }
   if (failures.length > 0) {
@@ -120,4 +203,8 @@ async function deleteResource(api: TodoistApi, kind: ResourceKind, id: string): 
     case 'comment':
       return api.comments.delete(id);
   }
+}
+
+function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
