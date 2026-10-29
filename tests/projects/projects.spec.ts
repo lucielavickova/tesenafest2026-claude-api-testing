@@ -32,7 +32,7 @@ test(
   async ({ api, testData }) => {
     const created = await test.step('Create a project', () => testData.createProject());
 
-    const newName = testData.uniqueName();
+    const newName = testData.generateUniqueName();
 
     await test.step('Rename the project to a new unique name and check the update response', async () => {
       expect(newName, 'the new name differs from the old one').not.toBe(created.name);
