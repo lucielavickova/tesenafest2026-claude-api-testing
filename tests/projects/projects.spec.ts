@@ -25,3 +25,28 @@ test(
     });
   },
 );
+
+test(
+  'TC-006 A renamed project loads under the new name the next time it is opened, not only in the response to the update',
+  { tag: ['@TC-006', '@regression'] },
+  async ({ api, testData }) => {
+    const created = await test.step('Create a project', () => testData.createProject());
+
+    const newName = testData.generateUniqueName();
+
+    await test.step('Rename the project to a new unique name and check the update response', async () => {
+      expect(newName, 'the new name differs from the old one').not.toBe(created.name);
+      const updated = await api.projects.update(created.id, { name: newName });
+      expect(updated).toMatchSchema(Schema.project);
+      expect(updated.id).toBe(created.id);
+      expect(updated.name).toBe(newName);
+    });
+
+    await test.step('Load the project by its id and check that it has the new name', async () => {
+      const project = await api.projects.get(created.id);
+      expect(project).toMatchSchema(Schema.project);
+      expect(project.id).toBe(created.id);
+      expect(project.name).toBe(newName);
+    });
+  },
+);
