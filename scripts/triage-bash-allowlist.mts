@@ -27,8 +27,14 @@ function main(): void {
     command = undefined;
   }
 
-  const reason =
-    typeof command === 'string' ? checkCommand(command) : 'the hook could not read the command';
+  let reason: string | undefined;
+  try {
+    reason =
+      typeof command === 'string' ? checkCommand(command) : 'the hook could not read the command';
+  } catch {
+    // Claude Code blocks only on exit code 2. A crash must not let the command through.
+    reason = 'the hook failed to check the command';
+  }
   if (reason !== undefined) {
     console.error(
       `Blocked by the ci-failure-triage allowlist: ${reason}. This agent is read-only, see ` +

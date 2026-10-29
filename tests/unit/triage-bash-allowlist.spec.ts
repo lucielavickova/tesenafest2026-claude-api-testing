@@ -34,6 +34,9 @@ const ALLOWED = [
   'git diff origin/main -- src/schemas/openapi.json',
   'git log --oneline -5',
   'ls /tmp/t 2>/dev/null; cat /tmp/t/error-context.md',
+  'gh run download 123 -D/tmp/tmp.abc',
+  'unzip -oq /tmp/t/a.zip -d /tmp/t/a -x "*.html"',
+  'sort -u /tmp/t/names | uniq -c',
   'rm -rf /tmp/tmp.abc',
   "rm -rf 'C:\\Users\\me\\AppData\\Local\\Temp\\run'",
 ];
@@ -57,6 +60,15 @@ const BLOCKED = [
   'rm -rf /tmp',
   'rm -rf src',
   'rm -rf /tmp/*',
+  // Repeated or attached options: programs differ in which value they use.
+  'gh run download 1 -D /tmp/x -D src',
+  'gh run download 1 -D /tmp/x -Dsrc',
+  'unzip -o /tmp/t.zip -d /tmp/t -d src',
+  'unzip -dlib /tmp/t.zip',
+  'unzip -o /tmp/t.zip -o',
+  'sort -uo CLAUDE.md /tmp/x',
+  'sort --compress-program=sh /tmp/x',
+  'uniq /tmp/x CLAUDE.md',
   'unzip /tmp/t/trace.zip -l',
   // Bash drops unquoted backslashes, so this is the relative path C:UsersmeAppData...
   'rm -rf C:\\Users\\me\\AppData\\Local\\Temp\\run',

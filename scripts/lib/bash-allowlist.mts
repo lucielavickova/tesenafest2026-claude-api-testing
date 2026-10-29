@@ -24,7 +24,6 @@ const READ_ONLY = new Set([
   'sort',
   'tail',
   'tr',
-  'uniq',
   'wc',
 ]);
 
@@ -55,7 +54,8 @@ const GIT_READ = new Set([
 /** Options that make an otherwise read-only command write files or run other programs. */
 const WRITING_OPTIONS: Record<string, RegExp> = {
   find: /^-(delete|exec|execdir|ok|okdir|fprint|fprint0|fprintf|fls)$/,
-  sort: /^(-o|--output)/,
+  // `-o` also inside a group such as `-uo`. A compress program is run by sort.
+  sort: /^(-[a-zA-Z]*o|--output|--compress-program)/,
   git: /^(--output|-O|--open-files-in-pager|--ext-diff|--textconv)/,
 };
 
@@ -188,15 +188,59 @@ function isTempPath(p: string, tempRoots: readonly string[]): boolean {
   return tempRoots.some((root) => n.startsWith(`${normalizePath(root)}/`));
 }
 
-/** The value of an option given as `-D x`, `--dir x` or `--dir=x`. */
-function optionValue(args: readonly string[], names: readonly string[]): string | undefined {
+/**
+ * Every value of an option given as `-D x`, `-Dx`, `--dir x` or `--dir=x`. All of them count,
+ * because programs differ in which one they use when an option is repeated.
+ */
+function optionValues(args: readonly string[], names: readonly string[]): string[] {
+  const values: string[] = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i] ?? '';
-    if (names.includes(arg)) return args[i + 1];
-    const long = names.find((name) => name.startsWith('--') && arg.startsWith(`${name}=`));
-    if (long) return arg.slice(long.length + 1);
+    for (const name of names) {
+      if (arg === name) values.push(args[++i] ?? '');
+      else if (name.startsWith('--') && arg.startsWith(`${name}=`)) {
+        values.push(arg.slice(name.length + 1));
+      } else if (!name.startsWith('--') && arg.startsWith(name))
+        values.push(arg.slice(name.length));
+    }
   }
-  return undefined;
+  return values;
+}
+
+/** True when the option is given at least once and every value is in the temp directory. */
+function onlyTempValues(
+  args: readonly string[],
+  names: readonly string[],
+  roots: readonly string[],
+) {
+  const values = optionValues(args, names);
+  return values.length > 0 && values.every((value) => isTempPath(value, roots));
+}
+
+/**
+ * unzip with known options only. It must list or print (`-l`, `-p`, `-v`, `-Z` before the
+ * archive name), or extract with every `-d` in the temp directory.
+ */
+function checkUnzip(args: readonly string[], tempRoots: readonly string[]): string | undefined {
+  let archiveSeen = false;
+  let listing = false;
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i] ?? '';
+    if (arg === '-x') break; // The rest are names of files to skip.
+    if (arg === '-d') {
+      if (!isTempPath(args[++i] ?? '', tempRoots)) return '"unzip -d" outside the temp directory';
+    } else if (/^-[oqnjlpvZ]+$/.test(arg)) {
+      if (archiveSeen) return `"unzip" with the option "${arg}" after the archive name`;
+      if (/[lpvZ]/.test(arg)) listing = true;
+    } else if (arg.startsWith('-')) {
+      return `"unzip" with the option "${arg}"`;
+    } else {
+      archiveSeen = true;
+    }
+  }
+  return listing || onlyTempValues(args, ['-d'], tempRoots)
+    ? undefined
+    : '"unzip" without -d <temp directory>';
 }
 
 function checkSegment(segment: Segment, tempRoots: readonly string[]): string | undefined {
@@ -221,11 +265,8 @@ function checkSegment(segment: Segment, tempRoots: readonly string[]): string | 
     case 'gh': {
       const sub = args.slice(0, 2).join(' ');
       if (!GH_READ.has(sub)) return `"gh ${sub}", only read commands of gh are allowed`;
-      if (sub === 'run download') {
-        const dir = optionValue(args, ['-D', '--dir']);
-        if (dir === undefined || !isTempPath(dir, tempRoots)) {
-          return '"gh run download" without -D <temp directory>';
-        }
+      if (sub === 'run download' && !onlyTempValues(args, ['-D', '--dir'], tempRoots)) {
+        return '"gh run download" without -D <temp directory>';
       }
       return undefined;
     }
@@ -233,17 +274,13 @@ function checkSegment(segment: Segment, tempRoots: readonly string[]): string | 
       const sub = args[0] ?? '';
       return GIT_READ.has(sub) ? undefined : `"git ${sub}", only read commands of git are allowed`;
     }
-    case 'unzip': {
-      // List and print modes extract nothing. Options after the archive name are file names,
-      // so only the options before it count.
-      const archive = args.findIndex((arg) => !arg.startsWith('-'));
-      const options = archive === -1 ? args : args.slice(0, archive);
-      if (options.some((arg) => /^-[a-zA-Z]*[lpZ]/.test(arg))) return undefined;
-      const dir = optionValue(args, ['-d']);
-      return dir !== undefined && isTempPath(dir, tempRoots)
-        ? undefined
-        : '"unzip" without -d <temp directory>';
-    }
+    case 'unzip':
+      return checkUnzip(args, tempRoots);
+    case 'uniq':
+      // A second file name is the output file.
+      return args.filter((arg) => !arg.startsWith('-')).length > 1
+        ? '"uniq" with an output file'
+        : undefined;
     case 'mktemp':
       return args.length === 1 && args[0] === '-d' ? undefined : 'only "mktemp -d" is allowed';
     case 'node': {
