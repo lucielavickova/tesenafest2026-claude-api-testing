@@ -47,6 +47,9 @@ because later steps often fail as a consequence:
 | `Run tests`, `Run smoke tests`              | API tests; read the report and the traces                  |
 | `Check artifacts for the API token`         | the token was found in the report or traces: P0, see Rules |
 
+Exception: in `pr.yml`, `Run tests` runs even when `Run unit tests` failed, so read both; an API
+test failure there is not a consequence of the unit test failure.
+
 From the Playwright output take the failed test titles, the `@TC-xxx` tags, the error messages
 and the `Retry #1` blocks. CI runs 1 retry, so a test that failed and then passed is flaky.
 
@@ -145,6 +148,12 @@ Next step:
 tests/tasks/due-date.spec.ts:42 to use todayIn(accountTimezone)", "re-run the job after the other
 PR runs finish", "open a Bug report and mark TC-007 test.fixme() until Todoist answers">
 ```
+
+Before the draft, look for an issue that already covers the failure:
+`gh issue list --state open --label bug --search "<TC-xxx or error text>"`, and for the smoke run
+`gh issue list --state open --label smoke-failure` (`smoke.yml` opens or comments on that issue by
+itself). If one exists, give its number and suggest a comment with the new evidence instead of a
+new issue.
 
 Then add a draft for the Bug report template (`.github/ISSUE_TEMPLATE/bug-report.yml`), ready for a
 person to paste into the form or to save to a file and pass to
