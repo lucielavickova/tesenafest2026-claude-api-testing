@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -8,7 +9,9 @@ import { expect, test } from '@playwright/test';
 // that fails on purpose (tests/unit/token-leak/), then scripts/check-no-token.mts on its report
 // and test results. The real token never reaches the nested run or the check.
 
-const FAKE_TOKEN = 'fake-token-for-the-leak-check-0123456789';
+// Random, so it is not in the source: on CI Playwright adds the git diff to the HTML report, and a
+// literal from a changed file would be found there. A real token is never in the source.
+const FAKE_TOKEN = `fake-token-${randomBytes(16).toString('hex')}`;
 const ROOT = path.resolve(__dirname, '../..');
 
 /** Variables a Playwright worker sets. The nested run must not think it is a worker. */
