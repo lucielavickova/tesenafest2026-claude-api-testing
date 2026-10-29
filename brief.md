@@ -97,11 +97,18 @@
 ## Pipelines (GitHub Actions)
 
 - **On every PR:** lint, format check, type check, then all tests.
-- **Every hour:** `@smoke` tests on `main`.
+- **Once a day:** `@smoke` tests on `main`.
   - If a scheduled run fails, the workflow opens a GitHub issue labeled `smoke-failure`,
     or comments on the existing open one. *(default)*
-- Runs share one Todoist account. Use a workflow `concurrency` group so that runs don't
-  overlap, and use at most 2 workers in CI. *(default)*
+- Runs share one Todoist account. Each PR has its own `concurrency` group, smoke runs have
+  their own group. A running run is never cancelled, because a cancelled run can skip its
+  cleanup and leave test projects for up to 1 hour. A new push replaces only the pending run of
+  the same PR. A single shared group is not used, because GitHub keeps only one pending run per
+  group and cancels the others.
+- Runs of different PRs may overlap. The test data is isolated by run id, and CI uses 1 worker
+  per run to keep the number of active projects low. This does not guarantee the free plan limit
+  on active projects when many PRs run at the same time. If a run fails on the project limit,
+  re-run it.
 - Retries: 1 in CI, 0 locally. Tests that pass only on retry are reported as flaky in the
   PR. *(default)*
 - Artifacts: the Playwright HTML report (always) and traces (failed tests only), kept
