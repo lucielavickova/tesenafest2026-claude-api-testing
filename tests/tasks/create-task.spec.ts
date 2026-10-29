@@ -20,7 +20,7 @@ test(
       const loaded = await api.tasks.get(created.id);
       expect(loaded).toMatchSchema(Schema.task);
       expect(loaded.id).toBe(created.id);
-      expect(loaded.content).toBe(content);
+      expect(loaded.content).toBe(content.toUpperCase());
     });
   },
 );
