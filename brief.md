@@ -97,11 +97,16 @@
 ## Pipelines (GitHub Actions)
 
 - **On every PR:** lint, format check, type check, then all tests.
-- **Once a day at 13:20 Prague time:** `@smoke` tests on `main`.
+- **4 times a day at 07:20, 11:20, 15:20 and 19:20 Prague time:** `@smoke` tests on `main`.
   - If a scheduled run fails, the workflow opens a GitHub issue labeled `smoke-failure`,
     or comments on the existing open one. *(default)*
-- Runs share one Todoist account. Each PR has its own `concurrency` group, smoke runs have
-  their own group. A running run is never cancelled, because a cancelled run can skip its
+- **Once a night at 02:20 Prague time:** all API tests (`npm run test:api`, incl. the
+  regression tests) on `main`.
+  - If the run fails, the workflow opens a GitHub issue labeled `nightly-failure`, or comments
+    on the existing open one.
+- Runs share one Todoist account. Each PR has its own `concurrency` group, smoke runs and
+  nightly runs have their own groups. The nightly run is scheduled far from the smoke runs, so
+  they do not overlap. A running run is never cancelled, because a cancelled run can skip its
   cleanup and leave test projects for up to 1 hour. A new push replaces only the pending run of
   the same PR. A single shared group is not used, because GitHub keeps only one pending run per
   group and cancels the others.

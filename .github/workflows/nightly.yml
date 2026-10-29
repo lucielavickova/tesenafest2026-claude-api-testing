@@ -1,0 +1,89 @@
+name: Nightly API tests
+
+on:
+  schedule:
+    # Every day at 02:20 Prague time (CET in winter, CEST in summer), on the default branch
+    # (main). GitHub may start a scheduled run a few minutes late under load. The smoke runs
+    # start at 07:20 at the earliest (smoke.yml), so the two never use the Todoist account at the
+    # same time.
+    - cron: '20 2 * * *'
+      timezone: Europe/Prague
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # nightly-failure issue
+
+# Nightly runs never overlap each other. They may overlap with PR runs, see pr.yml.
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    name: All API tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # The whole API suite (smoke, regression, e2e and negative tests). The setup project runs
+      # first. Unit tests are left out: they do not depend on the API and run on every PR.
+      - name: Run API tests
+        run: npm run test:api
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+
+      # The repo is public: nothing is uploaded unless this check passes.
+      - name: Check artifacts for the API token
+        id: leak-check
+        if: ${{ !cancelled() }}
+        run: node scripts/check-no-token.mts
+        env:
+          TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
+
+      - name: Upload HTML report
+        if: ${{ !cancelled() && steps.leak-check.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload traces of failed tests
+        if: ${{ failure() && steps.leak-check.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 14
+
+      - name: Open or update the nightly-failure issue
+        if: ${{ failure() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh label create nightly-failure --color B60205 \
+            --description "A nightly run of the API tests failed" --force > /dev/null
+          number=$(gh issue list --label nightly-failure --state open --limit 1 \
+            --json number --jq '.[0].number // empty')
+          body="The nightly run on \`${GITHUB_REF_NAME}\` failed: $RUN_URL"
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --body "$body"
+          else
+            gh issue create --title "Nightly API tests failed" --label nightly-failure \
+              --body "$body
+
+          Close this issue when the nightly run passes again. Later failures are added as comments."
+          fi
