@@ -1,14 +1,58 @@
-﻿# Tesena Fest 2026 Workshop: AI-assisted API Testing with Claude Code and Superpowers
- This repo is going to be used for workshop "AI-assisted API Testing with Claude Code and Superpowers" at Tesena Fest 2026
+# API test automation framework built in one day with Claude Code
 
-## Application under test
+[![PR checks](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/pr.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/pr.yml)
+[![Daily smoke](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml)
 
-- **Todoist**, a task manager: [www.todoist.com](https://www.todoist.com)
-- Create **a free account** and use it for testing
-- API docs: [https://developer.todoist.com/openapi.json](https://developer.todoist.com/openapi.json)
+Building a test automation framework usually takes three to six months. This one was built in a single day, on 24 September 2026, at the workshop "AI-assisted API Testing with Claude Code" at [Tesena Fest 2026](https://www.tesena.com): from an empty repository to API tests running in a GitHub Actions pipeline.
 
-# Split into teams
-https://docs.google.com/spreadsheets/d/1sojXo_kTQdlSs79mieYC4lg28hxKNJhT-8dk8EhaDk4/edit?gid=1451532433#gid=1451532433
+Claude Code wrote the code. People wrote the brief, approved the plan, set the rules, reviewed every pull request and merged it. Every step is in the history of this repo: the issues, the pull requests and the commits are the record of how it was done.
+
+The walk-through of this repo (in Czech) is the webinar [Test automation framework za jeden den: API testy s Claude Code](https://www.tesena.com/cz-test-automation-framework-za-jeden-den-api-testy-s-claude-code/a-1109/).
+
+## What it tests
+
+- **Todoist**, a task manager: [www.todoist.com](https://www.todoist.com), REST API v1, tested on a free account.
+- API docs: [developer.todoist.com/api/v1](https://developer.todoist.com/api/v1/), OpenAPI spec: [openapi.json](https://developer.todoist.com/openapi.json).
+- Test cases: [Test Cases for automation.md](<Test Cases for automation.md>). Each one has its own issue labeled `test`.
+
+## How it was built
+
+| Step | What people did | What Claude Code did | Where to see it |
+|------|-----------------|----------------------|-----------------|
+| 1. Brief | Wrote the requirements: scope, priorities, tools, security, pipelines, git workflow, definition of done | Nothing yet | [brief.md](brief.md) |
+| 2. Plan | Reviewed and approved the plan before any code existed | Proposed the architecture and split the work into issues | Issue #1, PR #2, [docs/test-architecture-plan.md](docs/test-architecture-plan.md) |
+| 3. Framework | Reviewed and merged | Scaffolding, base client with token auth and redaction, schema validation, API clients, fixtures, test data builders, CI pipelines | Issues #3 to #7, PR #8 |
+| 4. Rules and guardrails | Decided the rules | Wrote them down in templates, `CLAUDE.md` and git hooks | PRs #10, #26, #30, #32 |
+| 5. Tests | Picked the test cases, reviewed each test | Implemented one test case per issue and PR | PRs #27 and #28 |
+| 6. Skill | Asked Claude to turn what worked into a reusable workflow | Wrote the skill for adding new tests | PR #34, [.claude/skills/writing-todoist-api-tests](.claude/skills/writing-todoist-api-tests/SKILL.md) |
+
+### The rules the agent works by
+
+- **Every change starts as an issue.** Templates for test cases, tasks and bugs are in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE).
+- **One issue, one branch, one pull request.** Branch names and commit messages carry the issue ID, a `commit-msg` hook enforces it.
+- **The agent never pushes to `main` and never merges.** A `pre-push` hook blocks pushes to `main`. Claude reviews its own PR and fixes the findings, then a person reviews and merges.
+- **One git worktree per agent**, so several agents can work on different issues in parallel without switching branches under each other.
+- **Expected behavior is probed, not guessed.** Where the spec does not say what the API returns, the test asserts the observed behavior and the PR lists it as an assumption.
+- All of this is in [CLAUDE.md](CLAUDE.md). [AGENTS.md](AGENTS.md) points other coding agents to the same file.
+
+## Try it yourself
+
+What you need:
+
+- A paid Claude plan with Claude Code (Pro, Max or Team).
+- VS Code with the Claude Code extension.
+- The Superpowers plugin from the `anthropics/claude-plugins-official` marketplace. Restart VS Code after installing it, otherwise it does not load.
+- Git. On a company laptop set `git config user.name` and `git config user.email` in the repo, without `--global`, so the company identity stays untouched.
+- Node.js 24 LTS and npm. `npx playwright install` is not needed, the tests use no browser.
+- GitHub CLI, logged in with `gh auth login -s project`. Claude uses it to create issues and pull requests, read failed pipeline runs and set secrets.
+- A GitHub account and a free Todoist account.
+
+Then:
+
+1. Create your own copy with **Use this template** (or fork it).
+2. Create a free [Todoist](https://www.todoist.com) account and copy its API token from Settings > Integrations > Developer.
+3. Add the token as the `TODOIST_API_TOKEN` secret in your repository (Settings > Secrets and variables > Actions) and to your local `.env` (see Getting started).
+4. Open the repository in [Claude Code](https://claude.com/claude-code) and pick an open `test` issue, for example: `Work on issue #13. Follow CLAUDE.md and the writing-todoist-api-tests skill.`
 
 ## Getting started
 
@@ -29,7 +73,6 @@ cp .env.example .env        # then fill in TODOIST_API_TOKEN
 
 - The environment is picked by `TEST_ENV` (default `prod`) from `config/<TEST_ENV>.ts`.
 - Git hooks: `pre-commit` lints and formats staged files, `commit-msg` requires `#<issue id> <summary>`, `pre-push` blocks direct pushes to `main`. `npm ci` also sets `core.commentChar` to `;` so Git does not strip `#` subject lines written in the editor.
-- The architecture is described in [docs/test-architecture-plan.md](docs/test-architecture-plan.md).
 
 ## Project structure
 
@@ -46,6 +89,7 @@ src/
   global-setup.ts       deletes `autotest-` data older than 1 hour
 scripts/                check-no-token, report-flaky, update-openapi
 tests/                  spec files, grouped by resource or suite
+.claude/skills/         skills for Claude Code
 .github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
 ```
 
@@ -80,3 +124,7 @@ test('TC-002 A new task is created with the text that was entered', {
 - CI runs `node scripts/check-no-token.mts`, which searches `playwright-report/` and `test-results/` (including inside zips) and blocks the artifact upload if the token is found.
 - ESLint forbids `console` in the framework and tests. Live terminal output of a test that prints the token itself cannot be redacted.
 - Refresh the pinned spec by hand with `node scripts/update-openapi.mts` and review the diff.
+
+## License
+
+[MIT](LICENSE)
