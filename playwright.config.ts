@@ -18,7 +18,8 @@ export default defineConfig({
   reporter: [
     // The redaction reporter must stay first, see src/reporters/redact-reporter.ts.
     ['./src/reporters/redact-reporter.ts'],
-    ['list'],
+    // `list` that prints the test output only after redaction, see the file.
+    ['./src/reporters/redact-list-reporter.ts'],
     ['html', { open: 'never' }],
     // Read by scripts/report-flaky.mts in CI.
     ['json', { outputFile: 'test-results/results.json' }],

@@ -1,3 +1,5 @@
+import type { TestStep } from '@playwright/test/reporter';
+
 import { findApiToken } from '../env';
 
 export const REDACTED = '[REDACTED]';
@@ -38,4 +40,22 @@ export function redactBytes(
     }
   }
   return changed ? buffer : undefined;
+}
+
+/** Redacts a chunk of test output, as reporters get it in `onStdOut` and `onStdErr`. */
+export function redactChunk(
+  chunk: string | Buffer,
+  secrets: readonly string[] = secretValues(),
+): string | Buffer {
+  return typeof chunk === 'string'
+    ? redact(chunk, secrets)
+    : (redactBytes(chunk, secrets) ?? chunk);
+}
+
+/**
+ * Redacts the title of a step in place. The title is read-only in the reporter API, but other
+ * reporters read it later, for example the HTML reporter in `onEnd`.
+ */
+export function redactStepTitle(step: TestStep, secrets: readonly string[] = secretValues()): void {
+  (step as { title: string }).title = redact(step.title, secrets);
 }
