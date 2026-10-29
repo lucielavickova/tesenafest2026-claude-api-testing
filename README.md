@@ -41,11 +41,13 @@ The walk-through of this repo (in Czech) is the webinar [Test automation framewo
 Both are instructions for Claude Code in `.claude/`. The difference is who decides during the work and what you see.
 
 - **A skill works with you.** It loads into the current conversation. You see every step and can step in: "not this assert, check the status code". Use it when the result is a change in the code and you want to stay in control. Example: [writing-todoist-api-tests](.claude/skills/writing-todoist-api-tests/SKILL.md), the workflow for adding a test.
-- **A subagent works on its own and reports back.** It gets the task, runs in its own context with its own tools, and returns only the result. The long logs and traces stay out of your conversation. Use it when the way to the result is long and noisy and you only need the conclusion. Example: [ci-failure-triage](.claude/agents/ci-failure-triage.md). It has no Edit or Write tool, and its instructions forbid fixes, commits, pushes and new issues.
+- **A subagent works on its own and reports back.** It gets the task, runs in its own context with its own tools, and returns only the result. The long logs and traces stay out of your conversation. Use it when the way to the result is long and noisy and you only need the conclusion. Example: [ci-failure-triage](.claude/agents/ci-failure-triage.md). It has no Edit or Write tool, and a hook limits its Bash to read commands, see below.
 
 The two work together. When CI fails, ask Claude why: the `ci-failure-triage` agent reads the failed run and returns a category, the evidence and a draft Bug report, for example "test bug: TC-007 compares the date in UTC instead of the account timezone". Then you decide what to do, and fix the test in the main conversation with the `writing-todoist-api-tests` skill, step by step.
 
 When the same know-how is needed in both places, for example how to read our traces without printing the token, it can move into a skill that the agent loads with the `skills:` field.
+
+**"Must not" or "cannot".** Instructions say what the agent must not do, but an agent with the Bash tool could still run `gh issue create` or `git push`. The `ci-failure-triage` agent has a `PreToolUse` hook in its frontmatter: before each Bash command, [scripts/triage-bash-allowlist.mts](scripts/triage-bash-allowlist.mts) checks it against an allowlist of read commands and blocks everything else, also when it is hidden in `&&`, a pipe, `sh -c` or `$(...)`. The hook applies only to this agent, not to your own conversation. To read traces without the headers, the agent calls [scripts/trace-summary.mts](scripts/trace-summary.mts) instead of `node -e`, which the hook blocks. Claude Code runs project hooks only after you trust the folder, and not in `claude -p`.
 
 ## Try it yourself
 
@@ -101,7 +103,8 @@ src/
   schemas/              pinned OpenAPI spec, Ajv validator, `toMatchSchema` matcher
   reporters/            reporter that redacts the token from traces and reports
   utils/                dates in the account timezone, redaction helpers
-scripts/                check-no-token, report-flaky, update-openapi
+scripts/                check-no-token, report-flaky, update-openapi, trace-summary and the
+                        Bash allowlist hook of the triage agent (rules in scripts/lib/)
 tests/                  spec files, grouped by resource or suite
   global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
   unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
