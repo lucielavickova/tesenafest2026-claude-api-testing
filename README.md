@@ -30,7 +30,7 @@ The walk-through of this repo (in Czech) is the webinar [Test automation framewo
 
 - **Every change starts as an issue.** Templates for test cases, tasks and bugs are in [.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE).
 - **One issue, one branch, one pull request.** Branch names and commit messages carry the issue ID, a `commit-msg` hook enforces it.
-- **The agent never pushes to `main` and never merges.** A `pre-push` hook blocks pushes to `main`. Claude reviews its own PR and fixes the findings, then a person reviews and merges.
+- **The agent never pushes to `main` and never merges.** The "Protect main" ruleset on GitHub requires a pull request with a green `Lint, type check and tests` check and blocks force pushes and deletion of `main`; a `pre-push` hook rejects such pushes locally. Claude reviews its own PR and fixes the findings, then a person reviews and merges.
 - **One git worktree per agent**, so several agents can work on different issues in parallel without switching branches under each other.
 - **Expected behavior is probed, not guessed.** Where the spec does not say what the API returns, the test asserts the observed behavior and the PR lists it as an assumption.
 - All of this is in [CLAUDE.md](CLAUDE.md). [AGENTS.md](AGENTS.md) points other coding agents to the same file.
@@ -72,7 +72,7 @@ cp .env.example .env        # then fill in TODOIST_API_TOKEN
 | `npm run test:smoke` | Only tests tagged `@smoke` |
 
 - The environment is picked by `TEST_ENV` (default `prod`) from `config/<TEST_ENV>.ts`.
-- Git hooks: `pre-commit` lints and formats staged files, `commit-msg` requires `#<issue id> <summary>`, `pre-push` blocks direct pushes to `main`. `npm ci` also sets `core.commentChar` to `;` so Git does not strip `#` subject lines written in the editor.
+- Git hooks: `pre-commit` lints and formats staged files, `commit-msg` requires `#<issue id> <summary>`, `pre-push` blocks direct pushes to `main` (GitHub enforces the same with the "Protect main" ruleset). `npm ci` also sets `core.commentChar` to `;` so Git does not strip `#` subject lines written in the editor.
 
 ## Project structure
 
