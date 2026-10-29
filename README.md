@@ -1,7 +1,8 @@
 # API test automation framework built in one day with Claude Code
 
 [![PR checks](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/pr.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/pr.yml)
-[![Daily smoke](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml)
+[![Smoke](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/smoke.yml)
+[![Nightly API tests](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/nightly.yml/badge.svg)](https://github.com/lucielavickova/tesenafest2026-claude-api-testing/actions/workflows/nightly.yml)
 
 Building a test automation framework usually takes three to six months. This one was built in a single day, on 24 September 2026, at the workshop "AI-assisted API Testing with Claude Code" at [Tesena Fest 2026](https://www.tesena.com): from an empty repository to API tests running in a GitHub Actions pipeline.
 
@@ -107,7 +108,8 @@ tests/                  spec files, grouped by resource or suite
   unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
 .claude/skills/         skills for Claude Code
 .claude/agents/         subagents for Claude Code: ci-failure-triage (why a CI run failed)
-.github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
+.github/workflows/      pr.yml (every PR), smoke.yml (@smoke on main 4 times a day),
+                        nightly.yml (all API tests on main every night)
 ```
 
 ## Writing a test

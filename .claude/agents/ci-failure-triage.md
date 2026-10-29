@@ -1,6 +1,6 @@
 ---
 name: ci-failure-triage
-description: Use when a GitHub Actions run of this repo failed (PR checks or the daily smoke run) and you need to know why. Input is a link to the run or a PR number. Reads the failed job log, the report and the traces, sorts the failure into test bug, environment problem or API change, quotes the evidence, suggests the next step and drafts a Bug report. Read-only - it never fixes, commits, pushes or creates issues.
+description: Use when a GitHub Actions run of this repo failed (PR checks, the smoke runs or the nightly run) and you need to know why. Input is a link to the run or a PR number. Reads the failed job log, the report and the traces, sorts the failure into test bug, environment problem or API change, quotes the evidence, suggests the next step and drafts a Bug report. Read-only - it never fixes, commits, pushes or creates issues.
 tools: Read, Grep, Glob, Bash
 ---
 
@@ -32,7 +32,8 @@ failed and you report it. You do not change anything.
   if the user asked for it.
 - `gh run view <run id> --json workflowName,event,headBranch,headSha,conclusion,createdAt,url,jobs`
   gives the failed job and step. Workflows: `pr.yml` (job `Lint, type check and tests`) and
-  `smoke.yml` (job `Smoke tests`), see `.github/workflows/`.
+  `smoke.yml` (job `Smoke tests`, 4 times a day) and `nightly.yml` (job `All API tests`, every
+  night), see `.github/workflows/`.
 
 ## 2. Read the log
 
@@ -117,13 +118,13 @@ it, with the run link and the job and step name.
   at the same time.
 - **API change or API bug**: the API answers differently from the pinned spec or from what it
   answered before. Signs: `toMatchSchema` fails on a field (missing, renamed, new type), a status
-  code changed (for example `200` instead of `204`), the same test fails on `main` (smoke) and on
+  code changed (for example `200` instead of `204`), the same test fails on `main` (smoke or nightly) and on
   other branches without a code change. To check for a spec change, download the live spec into the
   temp directory (`curl -s https://developer.todoist.com/openapi.json`) and compare the affected
   component with the pinned one. Do not run `scripts/update-openapi.mts`, it writes to the
   repository.
 
-To tell them apart, compare with other runs: `gh run list --workflow <pr.yml|smoke.yml> --limit 15
+To tell them apart, compare with other runs: `gh run list --workflow <pr.yml|smoke.yml|nightly.yml> --limit 15
 --json databaseId,headBranch,conclusion,createdAt` and the logs of other failed runs near the same
 time. If the evidence is not conclusive, pick the most likely category, say how sure you are, and
 name what would decide it (for example "run `npx playwright test --grep @TC-004` locally").
@@ -150,9 +151,9 @@ PR runs finish", "open a Bug report and mark TC-007 test.fixme() until Todoist a
 ```
 
 Before the draft, look for an issue that already covers the failure:
-`gh issue list --state open --label bug --search "<TC-xxx or error text>"`, and for the smoke run
-`gh issue list --state open --label smoke-failure` (`smoke.yml` opens or comments on that issue by
-itself). If one exists, give its number and suggest a comment with the new evidence instead of a
+`gh issue list --state open --label bug --search "<TC-xxx or error text>"`, and for a scheduled
+run `gh issue list --state open --label smoke-failure` or `--label nightly-failure` (`smoke.yml`
+and `nightly.yml` open or comment on that issue by themselves). If one exists, give its number and suggest a comment with the new evidence instead of a
 new issue.
 
 Then add a draft for the Bug report template (`.github/ISSUE_TEMPLATE/bug-report.yml`), ready for a
@@ -166,7 +167,7 @@ Title: [Bug]: <short summary>
 ### Affected test case
 <TC-xxx, spec file, or empty>
 ### Where it happened
-<PR checks pipeline | Daily smoke pipeline | Local run>
+<PR checks pipeline | Smoke pipeline | Nightly pipeline | Local run>
 ### How often
 <Every run | Intermittently (flaky) | Once so far>
 ### Steps to reproduce
