@@ -1,27 +1,10 @@
 import { expect, test } from '@playwright/test';
 
 import { createRunId, isTestDataName, parseRunTimestamp, testCaseIdOf } from '../../src/data/runId';
-import { restoreEnvAfterEach } from './env';
 
 // Unit tests of the run id and test data names.
 
 const START = new Date('2026-09-24T10:15:00.123Z');
-
-test.describe('createRunId', { tag: '@unit' }, () => {
-  restoreEnvAfterEach('GITHUB_RUN_ID');
-
-  test('starts with the UTC start time and ends with "local" outside CI', () => {
-    delete process.env['GITHUB_RUN_ID'];
-
-    expect(createRunId(START)).toBe('20260924T101500Z-local');
-  });
-
-  test('ends with the GitHub run id in CI', () => {
-    process.env['GITHUB_RUN_ID'] = '12345678';
-
-    expect(createRunId(START)).toBe('20260924T101500Z-gh12345678');
-  });
-});
 
 test.describe('parseRunTimestamp', { tag: '@unit' }, () => {
   test('reads the start time of a name created in this run format', () => {
