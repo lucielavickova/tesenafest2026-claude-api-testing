@@ -19,6 +19,7 @@ npm run test:smoke      # only @smoke
 
 npx playwright test tests/projects/projects.spec.ts   # one file
 npx playwright test --grep @TC-001                    # one test case by tag
+npx playwright test tests/unit                        # unit tests of the framework (@unit, fake API; global setup still needs the token)
 ```
 
 - `TEST_ENV` selects `config/<TEST_ENV>.ts` (default `prod`). New environments are a new file registered in `config/index.ts`, nothing more.
@@ -28,13 +29,14 @@ npx playwright test --grep @TC-001                    # one test case by tag
 
 - **Clients** (`src/clients/`): one class per resource on top of `BaseClient`. The request context already carries the base URL and the Bearer header (`createApiContext`), so paths are relative (`tasks/123`). Typed methods throw `ApiError` on non-2xx; `send(method, path, options)` returns the raw `APIResponse` for status-code assertions. `listAll` follows `next_cursor` pagination.
 - **Fixtures** (`src/fixtures/`): spec files import `test`, `expect` and `Schema` only from `src/fixtures`. `mergeTests` combines `apiTest` (`api`, `apiRequest`, `unauthenticatedApi`, `apiWithToken`), `dataTest` (`testData`) and `userTest` (worker-scoped `account`, `accountTimezone`). Contexts are created from `playwright.request` so calls appear in traces.
-- **Test data** (`src/data/`): builders produce names `autotest-<run id>-<kind>-<hex>` via `uniqueName`. The run id is fixed once in `playwright.config.ts` (main process) and shared with workers through `AUTOTEST_RUN_ID`; it starts with a UTC timestamp so `global-setup.ts` can delete leftovers older than 1 hour (labels have no creation date). `testData.create*` registers items for cleanup in reverse order after the test, ignoring 404; anything created another way must be registered with `testData.track(kind, id)`.
+- **Test data** (`src/data/`): builders produce names `autotest-<run id>-<kind>-<hex>` via `uniqueName`. The run id is fixed once in `playwright.config.ts` (main process) and shared with workers through `AUTOTEST_RUN_ID`; it starts with a UTC timestamp so `global-setup.ts` can delete leftovers older than 1 hour (labels have no creation date). `testData.create*` registers items for cleanup in reverse order after the test, ignoring 404. If a create gets no response or a 5xx, it registers a lookup by the `autotest-` name it sent, which runs at cleanup, and rethrows. Anything created another way must be registered with `testData.track(kind, id)`.
 - **Schemas** (`src/schemas/`): Ajv 2020 validates against component schemas of the pinned OpenAPI spec. Use `expect(x).toMatchSchema(Schema.task)`; add new names to the `Schema` map in `validator.ts` instead of using generated names in tests.
 - **Token safety**: the repo is public. `src/reporters/redact-reporter.ts` must stay the first reporter; it redacts the token from traces, attachments, errors and output. Traces are kept only on failure. CI fails the artifact upload if `check-no-token.mts` finds the token. ESLint forbids `console`; never print the token or headers (global setup prints counts only).
 - **Dates**: assert due dates in `accountTimezone` with helpers in `src/utils/dates.ts`, not the runner's clock.
 
 ## Test conventions
 
+- Unit tests of the framework itself go to `tests/unit/` with the `@unit` tag and no TC ID. They import `test` from `@playwright/test`, use a fake `TodoistApi` and need `test.step()` only where it makes the report clearer, see `tests/unit/test-data-cleanup.spec.ts`.
 - Name: `TC-xxx <test case name>`, tags `@TC-xxx` plus the suite tag (`@smoke`, `@regression`, `@e2e`, `@negative`, see the wave table in `brief.md`). Every step is a `test.step()` with a readable name. One behavior per test; multi-input cases get suffixes (`TC-015a`).
 - Sections and TC-010 are out of scope. Features missing on the free plan are `test.fixme()` with the reason.
 - Where the spec does not define the expected result, call the API first, assert the observed behavior and list it as an assumption in the PR description.
