@@ -30,7 +30,7 @@ src/
     data.fixture.ts          tracked-resource fixtures that create and always delete (teardown runs on failure)
     user.fixture.ts          account timezone, worker scoped
   data/
-    runId.ts                 RUN_ID (GITHUB_RUN_ID or local timestamp) and prefix `autotest-<runId>-`
+    runId.ts                 RUN_ID (`gh<GITHUB_RUN_ID>` or `local`), prefix `autotest-<runId>-`, unique names
     projectBuilder.ts, taskBuilder.ts, labelBuilder.ts, commentBuilder.ts
   schemas/
     openapi.json             pinned snapshot of https://developer.todoist.com/openapi.json
@@ -54,8 +54,8 @@ tests/
 - **Base client.** `BaseClient` holds a `APIRequestContext` created with `baseURL` from config and `extraHTTPHeaders: { Authorization: 'Bearer ...' }`. Methods `get/post/delete` return parsed JSON typed as `T`; non-2xx throws `ApiError` unless the caller uses a `raw*` variant that returns the `APIResponse` (needed for negative tests TC-014/015). Resource clients are thin: one method per endpoint (`create`, `get`, `update`, `delete`, `list`, plus `close`/`reopen` on tasks). List endpoints in v1 are paginated (`{ results, next_cursor }`), so `BaseClient` gets a `listAll` helper.
 - **Schema validation.** Pin the OpenAPI spec in the repo (reproducible, reviewable diffs) and validate every successful response body against the matching component schema via Ajv. A custom `expect` matcher `toMatchSchema('<ComponentName>')` keeps tests readable. Exact component names are confirmed when the spec is pulled in (issue 3).
 - **Fixtures own setup and cleanup.** Data fixtures expose factory functions such as `createProject(overrides?)` that call the client, register the created id, and delete all registered ids in reverse order in teardown (fixture teardown runs on failure too). Deleting a project cascades its tasks and comments. Cleanup ignores 404 so tests that delete data themselves do not fail teardown.
-- **Test data.** Builders produce payloads with the `autotest-<runId>-` prefix plus a short random suffix, so parallel workers never collide. No shared data, no order dependency (`fullyParallel: true`).
-- **Global setup.** Lists projects and labels (and Inbox tasks), deletes those with the `autotest-` prefix whose run id timestamp or `created_at` is older than 1 hour. Protects the free plan project limit.
+- **Test data.** Builders produce payloads named `autotest-<runId>-w<worker>-<UTC time with ms>`, so parallel workers never collide. No shared data, no order dependency (`fullyParallel: true`).
+- **Global setup.** Lists projects and labels (and Inbox tasks), deletes those with the `autotest-` prefix whose time in the name is older than 1 hour. Protects the free plan project limit.
 - **Timezone-aware dates.** `user.fixture` reads the account timezone once per worker; `dates.ts` computes the expected calendar date in that zone (TC-003, TC-009, TC-013).
 - **Free plan check.** Before each wave, confirm features against the free plan (comments, labels, recurring due dates, reminders, etc.). Anything not available is `test.fixme(true, '<reason>')`.
 - **Security.**

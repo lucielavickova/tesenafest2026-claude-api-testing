@@ -4,7 +4,7 @@ test(
   'TC-001 A new project is created and comes back under the name that was entered',
   { tag: ['@TC-001', '@smoke'] },
   async ({ api, testData }) => {
-    const name = testData.uniqueName('project');
+    const name = testData.uniqueName();
 
     const created = await test.step('Create a project with a unique name', () =>
       testData.createProject({ name }));
