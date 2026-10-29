@@ -31,6 +31,7 @@ Closes #
 
 - [ ] Every commit message starts with `#<issue id>`.
 - [ ] New tests have a `@TC-xxx` tag, and `@smoke` where they belong in the smoke suite.
+- [ ] Every API test asserts the status code, the schema (successful bodies) and the business values.
 - [ ] Test data uses the builders, so it has the `autotest-` prefix and is cleaned up.
 - [ ] Features missing from the free plan are marked `test.fixme()` with the reason.
 - [ ] No API token or other secret in code, logs, screenshots or this description.
