@@ -45,7 +45,7 @@ body:
     attributes:
       label: Steps and expected result
       placeholder: |
-        1. Create a task with content "autotest-..."
+        1. Create a task with unique content (testData.uniqueName)
         2. Load the task by its ID
         Expected: the content matches, the response matches the schema
     validations:
