@@ -5,6 +5,16 @@ import { FAKE_TOKEN as SECRET, restoreEnvAfterEach } from './env';
 
 // Unit tests of the redaction helpers. They use a fake token, never the real one.
 
+test.describe('redact', { tag: '@unit' }, () => {
+  // The reporter tests have the token once per text. `replace` instead of `replaceAll` would
+  // still pass them and leak the second copy.
+  test('replaces every occurrence of a secret', () => {
+    expect(redact(`Bearer ${SECRET}, again ${SECRET}`, [SECRET])).toBe(
+      `Bearer ${REDACTED}, again ${REDACTED}`,
+    );
+  });
+});
+
 test.describe('redactBytes', { tag: '@unit' }, () => {
   const bytes = (text: string) => Buffer.from(text);
 

@@ -35,12 +35,14 @@ test.describe('todayIn', { tag: '@unit' }, () => {
 test.describe('addDays', { tag: '@unit' }, () => {
   test('crosses the end of a month and a year in both directions', () => {
     expect(addDays('2026-04-30', 1)).toBe('2026-05-01');
+    expect(addDays('2026-05-01', -1)).toBe('2026-04-30');
     expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
     expect(addDays('2027-01-01', -1)).toBe('2026-12-31');
   });
 
   test('knows 29 February in a leap year only', () => {
     expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
+    expect(addDays('2028-02-29', 1)).toBe('2028-03-01');
     expect(addDays('2027-02-28', 1)).toBe('2027-03-01');
   });
 
