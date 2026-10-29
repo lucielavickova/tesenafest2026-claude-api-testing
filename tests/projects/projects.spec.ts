@@ -33,9 +33,9 @@ test(
     const created = await test.step('Create a project', () => testData.createProject());
 
     const newName = testData.uniqueName();
-    expect(newName, 'the new name differs from the old one').not.toBe(created.name);
 
-    await test.step('Rename the project and check the update response', async () => {
+    await test.step('Rename the project to a new unique name and check the update response', async () => {
+      expect(newName, 'the new name differs from the old one').not.toBe(created.name);
       const updated = await api.projects.update(created.id, { name: newName });
       expect(updated).toMatchSchema(Schema.project);
       expect(updated.id).toBe(created.id);
