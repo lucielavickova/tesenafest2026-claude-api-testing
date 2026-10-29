@@ -6,7 +6,7 @@ import {
   isTestDataName,
   parseCreatedAt,
   testCaseIdOf,
-  uniqueName,
+  generateUniqueName,
 } from '../../src/data/runId';
 import { restoreEnvAfterEach } from './env';
 
@@ -28,14 +28,14 @@ test.describe('createRunId', { tag: '@unit' }, () => {
   });
 });
 
-test.describe('uniqueName', { tag: '@unit' }, () => {
+test.describe('generateUniqueName', { tag: '@unit' }, () => {
   restoreEnvAfterEach('TEST_PARALLEL_INDEX');
 
   test('has the test case ID, the run id, the worker and the UTC time it was created', () => {
     process.env['TEST_PARALLEL_INDEX'] = '3';
     const before = Date.now();
 
-    const name = uniqueName('TC-004');
+    const name = generateUniqueName('TC-004');
 
     const createdAt = parseCreatedAt(name)?.getTime() ?? 0;
     expect(createdAt).toBeGreaterThanOrEqual(before);
@@ -45,14 +45,14 @@ test.describe('uniqueName', { tag: '@unit' }, () => {
   });
 
   test('starts with autotest- without a test case ID', () => {
-    expect(uniqueName()).toMatch(/^autotest-/);
+    expect(generateUniqueName()).toMatch(/^autotest-/);
   });
 
   test('gives the next millisecond to a name in the same millisecond', () => {
     const now = new Date();
 
-    const first = uniqueName('TC-004', now);
-    const second = uniqueName('TC-004', now);
+    const first = generateUniqueName('TC-004', now);
+    const second = generateUniqueName('TC-004', now);
 
     expect(second).not.toBe(first);
     expect((parseCreatedAt(second)?.getTime() ?? 0) - (parseCreatedAt(first)?.getTime() ?? 0)).toBe(

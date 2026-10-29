@@ -7,7 +7,8 @@ import { expect, test } from '@playwright/test';
 
 // End-to-end check of the token redaction: a nested Playwright run with a fake token and a test
 // that fails on purpose (tests/unit/token-leak/), then scripts/check-no-token.mts on its report
-// and test results. The real token never reaches the nested run or the check.
+// and test results, and a search for the token in the console output of the `list` reporter. The
+// real token never reaches the nested run or the check.
 
 // Random, so it is not in the source: on CI Playwright adds the git diff to the HTML report, and a
 // literal from a changed file would be found there. A real token is never in the source.
@@ -38,7 +39,12 @@ function run(args: string[], env: NodeJS.ProcessEnv) {
 
 /** Runs the failing test into `output` and returns the result of check-no-token on it. */
 function runAndCheck(output: string, redact: boolean) {
-  const env = childEnv({ LEAK_CHECK_OUTPUT: output, LEAK_CHECK_REDACT: redact ? '1' : '0' });
+  const env = childEnv({
+    LEAK_CHECK_OUTPUT: output,
+    LEAK_CHECK_REDACT: redact ? '1' : '0',
+    // The output of the nested run is a pipe, and `list` prints steps only to a terminal.
+    PLAYWRIGHT_FORCE_TTY: '1',
+  });
   const nested = run(
     [
       require.resolve('@playwright/test/cli'),
@@ -58,22 +64,28 @@ test.describe('token redaction end to end', { tag: '@unit' }, () => {
   // Two nested Playwright runs.
   test.slow();
 
-  test('a failed test leaves no token in the report and the test results', () => {
+  test('a failed test leaves no token in the report, the test results and the console', () => {
     const output = test.info().outputPath('redacted');
     const { nested, check, resultsDir } = runAndCheck(output, true);
 
     expect(nested.status, `the nested test fails on purpose\n${nested.output}`).toBe(1);
+    // The output of the test and the step title, live and in the failure summary.
+    expect(nested.output).toContain('token in the output: [REDACTED]');
+    expect(nested.output).toContain('Call the local server with [REDACTED]');
+    expect(nested.output).not.toContain(FAKE_TOKEN);
     const traces = fs.readdirSync(resultsDir, { recursive: true, encoding: 'utf8' });
     expect(traces.filter((file) => file.endsWith('trace.zip'))).toHaveLength(1);
     expect(check.status, check.output).toBe(0);
     expect(check.output).toContain('check-no-token: OK');
   });
 
-  test('without the redaction reporter the check finds the token', () => {
+  test('without the redaction reporters the token is in the artifacts and the console', () => {
     const output = test.info().outputPath('not-redacted');
     const { nested, check } = runAndCheck(output, false);
 
     expect(nested.status, `the nested test fails on purpose\n${nested.output}`).toBe(1);
+    expect(nested.output).toContain(`token in the output: ${FAKE_TOKEN}`);
+    expect(nested.output).toContain(`Call the local server with ${FAKE_TOKEN}`);
     expect(check.status, check.output).toBe(1);
     expect(check.output).toContain('trace.zip > ');
     expect(check.output).toContain('index.html');

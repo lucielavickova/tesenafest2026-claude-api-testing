@@ -45,7 +45,7 @@ let lastCreatedAt = 0;
  *   it. Todoist rejects a second label with the same name.
  * - Within one worker, a name in the same millisecond as the previous one gets the next millisecond.
  */
-export function uniqueName(testCaseId?: string, now: Date = new Date()): string {
+export function generateUniqueName(testCaseId?: string, now: Date = new Date()): string {
   lastCreatedAt = Math.max(now.getTime(), lastCreatedAt + 1);
   const owner = testCaseId ? `${testCaseId}-` : '';
   const worker = process.env['TEST_PARALLEL_INDEX'] ?? '0';

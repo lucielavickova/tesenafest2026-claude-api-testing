@@ -9,7 +9,7 @@ import type {
 } from '@playwright/test/reporter';
 import { unzipSync, zipSync, type Zippable } from 'fflate';
 
-import { redact, redactBytes, secretValues } from '../utils/redact';
+import { redact, redactBytes, redactChunk, redactStepTitle, secretValues } from '../utils/redact';
 
 /**
  * Removes the API token from everything a test result carries, before any other reporter or
@@ -20,6 +20,9 @@ import { redact, redactBytes, secretValues } from '../utils/redact';
  * playwright.config.ts: reporters get `onTestEnd` one after another in that order, and the HTML
  * reporter copies attachments only in `onEnd`. Everything here is synchronous on purpose, because
  * Playwright does not wait for a promise returned from `onTestEnd`.
+ *
+ * The live console output of the `list` reporter comes before `onTestEnd`, so this reporter
+ * cannot redact it. redact-list-reporter.ts does that.
  */
 export default class RedactReporter implements Reporter {
   private readonly secrets = secretValues();
@@ -35,7 +38,7 @@ export default class RedactReporter implements Reporter {
 
   /** Before reporters that print steps as they start, such as `list` with `printSteps`. */
   onStepBegin(_test: TestCase, _result: TestResult, step: TestStep): void {
-    if (this.secrets.length > 0) this.redactTitle(step);
+    if (this.secrets.length > 0) redactStepTitle(step, this.secrets);
   }
 
   onTestEnd(test: TestCase, result: TestResult): void {
@@ -62,8 +65,8 @@ export default class RedactReporter implements Reporter {
       this.redactStep(step);
     });
 
-    result.stdout = result.stdout.map((chunk) => this.redactChunk(chunk));
-    result.stderr = result.stderr.map((chunk) => this.redactChunk(chunk));
+    result.stdout = result.stdout.map((chunk) => redactChunk(chunk, this.secrets));
+    result.stderr = result.stderr.map((chunk) => redactChunk(chunk, this.secrets));
   }
 
   private redactFile(filePath: string, contentType: string): void {
@@ -96,7 +99,7 @@ export default class RedactReporter implements Reporter {
   }
 
   private redactStep(step: TestStep): void {
-    this.redactTitle(step);
+    redactStepTitle(step, this.secrets);
     this.redactAnnotations(step.annotations);
     if (step.error) this.redactError(step.error);
     step.steps.forEach((child) => {
@@ -110,17 +113,5 @@ export default class RedactReporter implements Reporter {
         annotation.description = redact(annotation.description, this.secrets);
       }
     }
-  }
-
-  private redactTitle(step: TestStep): void {
-    // The title is read-only in the reporter API, but other reporters read it later, for example
-    // the HTML reporter in `onEnd`.
-    (step as { title: string }).title = redact(step.title, this.secrets);
-  }
-
-  private redactChunk(chunk: string | Buffer): string | Buffer {
-    return typeof chunk === 'string'
-      ? redact(chunk, this.secrets)
-      : (redactBytes(chunk, this.secrets) ?? chunk);
   }
 }
