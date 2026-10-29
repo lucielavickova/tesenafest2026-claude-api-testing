@@ -106,7 +106,7 @@ test(
   'TC-002 A new task is created with the text that was entered',
   { tag: ['@TC-002', '@smoke'] },
   async ({ api, testData }) => {
-    const content = testData.uniqueName();
+    const content = testData.generateUniqueName();
 
     const created = await test.step('Create a task with unique content', () =>
       testData.createTask({ content }));
@@ -130,7 +130,7 @@ test(
 This is [tests/tasks/create-task.spec.ts](tests/tasks/create-task.spec.ts). The test checks the create response and then loads the task again, because the response alone does not prove that the task was stored.
 
 - There is no login. The API token is sent as a Bearer header on every request.
-- `testData.create*` builds a unique name such as `TC-002-autotest-local-w0-20260924T101503123Z` (the test case ID from the `@TC-...` tag, the run id, the worker and the UTC time the name was created) and deletes the item after the test, also when it fails. Use `testData.uniqueName()` for values the test builds itself and `testData.track(kind, id)` for things created another way.
+- `testData.create*` builds a unique name such as `TC-002-autotest-local-w0-20260924T101503123Z` (the test case ID from the `@TC-...` tag, the run id, the worker and the UTC time the name was created) and deletes the item after the test, also when it fails. Use `testData.generateUniqueName()` for values the test builds itself and `testData.track(kind, id)` for things created another way.
 - `api.<resource>.send(method, path, options)` returns the raw response, for status code checks.
 - `unauthenticatedApi` and `apiWithToken(token)` are for the negative auth tests.
 - `accountTimezone` (with `src/utils/dates.ts`) is the timezone for date assertions, not the runner's clock.

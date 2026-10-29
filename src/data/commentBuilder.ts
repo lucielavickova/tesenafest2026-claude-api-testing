@@ -1,5 +1,5 @@
 import type { CreateCommentPayload } from '../clients';
-import { uniqueName } from './runId';
+import { generateUniqueName } from './runId';
 
 export type CommentTarget = { task_id: string } | { project_id: string };
 
@@ -9,5 +9,5 @@ export function buildComment(
   overrides: { content?: string } = {},
   testCaseId?: string,
 ): CreateCommentPayload {
-  return { content: uniqueName(testCaseId), ...overrides, ...target };
+  return { content: generateUniqueName(testCaseId), ...overrides, ...target };
 }
