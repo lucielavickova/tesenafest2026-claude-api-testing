@@ -1,5 +1,3 @@
-import type { APIResponse } from '@playwright/test';
-
 import { expect, test, type ApiFixtures, type TestData } from '../../src/fixtures';
 
 /**
@@ -9,6 +7,7 @@ import { expect, test, type ApiFixtures, type TestData } from '../../src/fixture
 const MALFORMED_TOKEN = 'malformed-token-tc-014';
 
 type Client = ApiFixtures['api'];
+type APIResponse = Awaited<ReturnType<Client['tasks']['send']>>;
 
 /**
  * Sends `POST /tasks` with unique content with `client` into a new project the test owns.
