@@ -28,7 +28,7 @@ export default class RedactReporter implements Reporter {
     return false;
   }
 
-  /** Errors outside of tests, for example from the global setup. */
+  /** Errors outside of tests, for example when a spec file cannot be loaded. */
   onError(error: TestError): void {
     if (this.secrets.length > 0) this.redactError(error);
   }
@@ -87,6 +87,8 @@ export default class RedactReporter implements Reporter {
   }
 
   private redactStep(step: TestStep): void {
+    // The title is read-only in the reporter API, but the HTML reporter reads it in `onEnd`.
+    (step as { title: string }).title = redact(step.title, this.secrets);
     if (step.error) this.redactError(step.error);
     step.steps.forEach((child) => {
       this.redactStep(child);
