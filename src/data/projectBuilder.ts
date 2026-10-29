@@ -6,5 +6,5 @@ export function buildProject(
   overrides: Partial<CreateProjectPayload> = {},
   testCaseId?: string,
 ): CreateProjectPayload {
-  return { name: uniqueName('project', testCaseId), ...overrides };
+  return { name: uniqueName(testCaseId), ...overrides };
 }

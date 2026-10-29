@@ -69,7 +69,9 @@ cp .env.example .env        # then fill in TODOIST_API_TOKEN
 | `npm run lint` | ESLint (typescript-eslint type-checked rules, eslint-plugin-playwright) |
 | `npm run format:check` | Prettier check (`npm run format` to fix) |
 | `npm run typecheck` | TypeScript strict type check |
-| `npm test` | All Playwright API tests |
+| `npm test` | All tests: unit tests of the framework and API tests |
+| `npm run test:unit` | Unit tests of the framework (`tests/unit/`). They do not call the API and do not need `TODOIST_API_TOKEN` |
+| `npm run test:api` | API tests only. The `setup` project deletes old test data first |
 | `npm run test:smoke` | Only tests tagged `@smoke` |
 
 - The environment is picked by `TEST_ENV` (default `prod`) from `config/<TEST_ENV>.ts`.
@@ -87,9 +89,10 @@ src/
   schemas/              pinned OpenAPI spec, Ajv validator, `toMatchSchema` matcher
   reporters/            reporter that redacts the token from traces and reports
   utils/                dates in the account timezone, redaction helpers
-  global-setup.ts       deletes `autotest-` data older than 1 hour
 scripts/                check-no-token, report-flaky, update-openapi
 tests/                  spec files, grouped by resource or suite
+  global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
+  unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
 .claude/skills/         skills for Claude Code
 .github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
 ```
@@ -103,7 +106,7 @@ test(
   'TC-002 A new task is created with the text that was entered',
   { tag: ['@TC-002', '@smoke'] },
   async ({ api, testData }) => {
-    const content = testData.uniqueName('task');
+    const content = testData.uniqueName();
 
     const created = await test.step('Create a task with unique content', () =>
       testData.createTask({ content }));
@@ -127,7 +130,7 @@ test(
 This is [tests/tasks/create-task.spec.ts](tests/tasks/create-task.spec.ts). The test checks the create response and then loads the task again, because the response alone does not prove that the task was stored.
 
 - There is no login. The API token is sent as a Bearer header on every request.
-- `testData.create*` builds a unique name such as `TC-002-autotest-20260924T101500Z-local-task-3f9a1c` (the test case ID from the `@TC-...` tag, then the run id) and deletes the item after the test, also when it fails. Use `testData.uniqueName(kind)` for values the test builds itself and `testData.track(kind, id)` for things created another way.
+- `testData.create*` builds a unique name such as `TC-002-autotest-local-w0-20260924T101503123Z` (the test case ID from the `@TC-...` tag, the run id, the worker and the UTC time the name was created) and deletes the item after the test, also when it fails. Use `testData.uniqueName()` for values the test builds itself and `testData.track(kind, id)` for things created another way.
 - `api.<resource>.send(method, path, options)` returns the raw response, for status code checks.
 - `unauthenticatedApi` and `apiWithToken(token)` are for the negative auth tests.
 - `accountTimezone` (with `src/utils/dates.ts`) is the timezone for date assertions, not the runner's clock.

@@ -9,8 +9,6 @@ const isCI = !!process.env['CI'];
 getRunId();
 
 export default defineConfig({
-  testDir: './tests',
-  globalSetup: './src/global-setup.ts',
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
@@ -29,4 +27,18 @@ export default defineConfig({
     baseURL: config.baseURL,
     trace: 'retain-on-failure',
   },
+  projects: [
+    // Unit tests of the framework: no Todoist API and no TODOIST_API_TOKEN.
+    { name: 'unit', testDir: './tests/unit' },
+    // Deletes stale `autotest-` data before the API tests. A setup project instead of
+    // globalSetup, so `--project=unit` does not call the API.
+    { name: 'setup', testDir: './tests', testMatch: 'global.setup.ts' },
+    // A RegExp, because a glob such as 'unit/**' matches a `unit` folder anywhere in the path.
+    {
+      name: 'api',
+      testDir: './tests',
+      testIgnore: /[\\/]tests[\\/]unit[\\/]/,
+      dependencies: ['setup'],
+    },
+  ],
 });

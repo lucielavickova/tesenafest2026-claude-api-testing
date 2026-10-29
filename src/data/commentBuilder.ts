@@ -9,5 +9,5 @@ export function buildComment(
   overrides: { content?: string } = {},
   testCaseId?: string,
 ): CreateCommentPayload {
-  return { content: uniqueName('comment', testCaseId), ...overrides, ...target };
+  return { content: uniqueName(testCaseId), ...overrides, ...target };
 }

@@ -28,13 +28,22 @@ export default class RedactReporter implements Reporter {
     return false;
   }
 
-  /** Errors outside of tests, for example from the global setup. */
+  /** Errors outside of tests, for example when a spec file cannot be loaded. */
   onError(error: TestError): void {
     if (this.secrets.length > 0) this.redactError(error);
   }
 
-  onTestEnd(_test: TestCase, result: TestResult): void {
+  /** Before reporters that print steps as they start, such as `list` with `printSteps`. */
+  onStepBegin(_test: TestCase, _result: TestResult, step: TestStep): void {
+    if (this.secrets.length > 0) this.redactTitle(step);
+  }
+
+  onTestEnd(test: TestCase, result: TestResult): void {
     if (this.secrets.length === 0) return;
+
+    // The HTML and JSON reporters show both, for example a skip reason.
+    this.redactAnnotations(test.annotations);
+    this.redactAnnotations(result.annotations);
 
     for (const attachment of result.attachments) {
       if (attachment.body) {
@@ -87,10 +96,26 @@ export default class RedactReporter implements Reporter {
   }
 
   private redactStep(step: TestStep): void {
+    this.redactTitle(step);
+    this.redactAnnotations(step.annotations);
     if (step.error) this.redactError(step.error);
     step.steps.forEach((child) => {
       this.redactStep(child);
     });
+  }
+
+  private redactAnnotations(annotations: TestCase['annotations']): void {
+    for (const annotation of annotations) {
+      if (annotation.description !== undefined) {
+        annotation.description = redact(annotation.description, this.secrets);
+      }
+    }
+  }
+
+  private redactTitle(step: TestStep): void {
+    // The title is read-only in the reporter API, but other reporters read it later, for example
+    // the HTML reporter in `onEnd`.
+    (step as { title: string }).title = redact(step.title, this.secrets);
   }
 
   private redactChunk(chunk: string | Buffer): string | Buffer {
