@@ -66,7 +66,8 @@
 ## Test data
 
 - Every test creates its own data and deletes it afterwards, including when the test fails.
-- All created data uses the name prefix `autotest-<run id>-` so that it is easy to spot.
+- All created data has a name in the format `<TC ID>-autotest-<run id>-w<worker>-<UTC time>`,
+  for example `TC-004-autotest-local-w0-20261029T101503123Z`, so that it is easy to spot.
 - A global setup deletes leftover `autotest-` data older than 1 hour. This keeps the free
   plan limits (for example the active project limit) from blocking later runs.
 - Tests don't share data and don't depend on the order they run in.
