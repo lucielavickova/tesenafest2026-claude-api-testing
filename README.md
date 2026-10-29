@@ -94,6 +94,7 @@ tests/                  spec files, grouped by resource or suite
   global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
   unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
 .claude/skills/         skills for Claude Code
+.claude/agents/         subagents for Claude Code: ci-failure-triage (why a CI run failed)
 .github/workflows/      pr.yml (every PR), smoke.yml (daily @smoke on main)
 ```
 
