@@ -4,7 +4,7 @@ test(
   'TC-004 A new label is created under the name that was entered',
   { tag: ['@TC-004', '@smoke'] },
   async ({ api, testData }) => {
-    const name = testData.uniqueName('label');
+    const name = testData.uniqueName();
 
     const created = await test.step('Create a label with a unique name', () =>
       testData.createLabel({ name }));
