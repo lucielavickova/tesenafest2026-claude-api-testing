@@ -73,7 +73,7 @@ nothing leaks, and what to run before calling it done.
 - **Closed tasks:** `api.tasks.list` returns open tasks only. A closed task is still loaded by id:
   `api.tasks.get(id)` has `checked: true` and `completed_at` set; after a reopen `checked: false`
   and `completed_at: null`. Close and reopen answer `204` with an empty body, so use
-  `send('POST', \`tasks/${id}/close\`)` when the status is part of the test.
+  `api.tasks.send('POST', 'tasks/<id>/close')` when the status is part of the test.
 - **Dates relative to today** (`tomorrow`, `every day`): compute them with `todayIn` /
   `tomorrowIn(accountTimezone)` right before the calls, compute again after them, and skip when the
   day changed in between. Assert after that guard (TC-009, TC-013):
