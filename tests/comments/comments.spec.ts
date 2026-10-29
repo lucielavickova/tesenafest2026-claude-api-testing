@@ -4,7 +4,7 @@ test(
   'TC-005 A comment is added to a task with the text that was entered',
   { tag: ['@TC-005', '@smoke'] },
   async ({ api, testData }) => {
-    const content = testData.uniqueName('comment');
+    const content = testData.uniqueName();
 
     const task = await test.step('Create a task', () => testData.createTask());
 
