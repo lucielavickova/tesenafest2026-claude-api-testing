@@ -1,10 +1,10 @@
 import type { CreateLabelPayload } from '../clients';
-import { uniqueName } from './runId';
+import { generateUniqueName } from './runId';
 
 /** A valid personal label payload with a unique `autotest-` name. Overrides win. */
 export function buildLabel(
   overrides: Partial<CreateLabelPayload> = {},
   testCaseId?: string,
 ): CreateLabelPayload {
-  return { name: uniqueName(testCaseId), ...overrides };
+  return { name: generateUniqueName(testCaseId), ...overrides };
 }

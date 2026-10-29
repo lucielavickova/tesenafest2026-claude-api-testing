@@ -117,7 +117,7 @@ test.describe('testData cleanup after a failed create', { tag: '@unit' }, () => 
     const fake = fakeApi();
     const { testData, cleanUp } = createTestData(fake.api, 'TC-002');
     const project = await testData.createProject();
-    await testData.createTask({ project_id: project.id, content: testData.uniqueName() });
+    await testData.createTask({ project_id: project.id, content: testData.generateUniqueName() });
     fake.failNext('tasks', noResponse('tasks'), 'later');
 
     await expect(testData.createTask({ project_id: project.id })).rejects.toThrow(

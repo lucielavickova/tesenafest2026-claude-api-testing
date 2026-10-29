@@ -9,6 +9,6 @@ export {
   parseCreatedAt,
   runPrefix,
   testCaseIdOf,
-  uniqueName,
+  generateUniqueName,
 } from './runId';
 export { buildTask } from './taskBuilder';

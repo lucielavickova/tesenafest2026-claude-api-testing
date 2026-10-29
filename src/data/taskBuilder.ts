@@ -1,5 +1,5 @@
 import type { CreateTaskPayload } from '../clients';
-import { uniqueName } from './runId';
+import { generateUniqueName } from './runId';
 
 /**
  * A valid task payload with a unique `autotest-` content. Overrides win.
@@ -9,5 +9,5 @@ export function buildTask(
   overrides: Partial<CreateTaskPayload> = {},
   testCaseId?: string,
 ): CreateTaskPayload {
-  return { content: uniqueName(testCaseId), ...overrides };
+  return { content: generateUniqueName(testCaseId), ...overrides };
 }
