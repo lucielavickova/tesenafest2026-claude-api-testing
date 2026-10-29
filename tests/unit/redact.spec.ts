@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 import { REDACTED, redact, redactBytes, secretValues } from '../../src/utils/redact';
+import { FAKE_TOKEN as SECRET, restoreEnvAfterEach } from './env';
 
 // Unit tests of the redaction helpers. They use a fake token, never the real one.
-
-const SECRET = 'fake-token-for-unit-tests';
 
 test.describe('redact', { tag: '@unit' }, () => {
   test('replaces every occurrence of a secret', () => {
@@ -65,16 +64,7 @@ test.describe('redactBytes', { tag: '@unit' }, () => {
 });
 
 test.describe('secretValues', { tag: '@unit' }, () => {
-  let saved: string | undefined;
-
-  test.beforeEach(() => {
-    saved = process.env['TODOIST_API_TOKEN'];
-  });
-
-  test.afterEach(() => {
-    if (saved === undefined) delete process.env['TODOIST_API_TOKEN'];
-    else process.env['TODOIST_API_TOKEN'] = saved;
-  });
+  restoreEnvAfterEach('TODOIST_API_TOKEN');
 
   test('contains the token without surrounding whitespace', () => {
     process.env['TODOIST_API_TOKEN'] = `  ${SECRET}\n`;

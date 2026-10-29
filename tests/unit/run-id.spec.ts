@@ -1,22 +1,14 @@
 import { expect, test } from '@playwright/test';
 
 import { createRunId, isTestDataName, parseRunTimestamp, testCaseIdOf } from '../../src/data/runId';
+import { restoreEnvAfterEach } from './env';
 
 // Unit tests of the run id and test data names.
 
 const START = new Date('2026-09-24T10:15:00.123Z');
 
 test.describe('createRunId', { tag: '@unit' }, () => {
-  let saved: string | undefined;
-
-  test.beforeEach(() => {
-    saved = process.env['GITHUB_RUN_ID'];
-  });
-
-  test.afterEach(() => {
-    if (saved === undefined) delete process.env['GITHUB_RUN_ID'];
-    else process.env['GITHUB_RUN_ID'] = saved;
-  });
+  restoreEnvAfterEach('GITHUB_RUN_ID');
 
   test('starts with the UTC start time and ends with "local" outside CI', () => {
     delete process.env['GITHUB_RUN_ID'];

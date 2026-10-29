@@ -33,6 +33,11 @@ export default class RedactReporter implements Reporter {
     if (this.secrets.length > 0) this.redactError(error);
   }
 
+  /** Before reporters that print steps as they start, such as `list` with `printSteps`. */
+  onStepBegin(_test: TestCase, _result: TestResult, step: TestStep): void {
+    if (this.secrets.length > 0) this.redactTitle(step);
+  }
+
   onTestEnd(_test: TestCase, result: TestResult): void {
     if (this.secrets.length === 0) return;
 
@@ -87,12 +92,17 @@ export default class RedactReporter implements Reporter {
   }
 
   private redactStep(step: TestStep): void {
-    // The title is read-only in the reporter API, but the HTML reporter reads it in `onEnd`.
-    (step as { title: string }).title = redact(step.title, this.secrets);
+    this.redactTitle(step);
     if (step.error) this.redactError(step.error);
     step.steps.forEach((child) => {
       this.redactStep(child);
     });
+  }
+
+  private redactTitle(step: TestStep): void {
+    // The title is read-only in the reporter API, but other reporters read it later, for example
+    // the HTML reporter in `onEnd`.
+    (step as { title: string }).title = redact(step.title, this.secrets);
   }
 
   private redactChunk(chunk: string | Buffer): string | Buffer {

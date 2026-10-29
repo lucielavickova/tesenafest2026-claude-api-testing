@@ -6,11 +6,10 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate';
 
 import RedactReporter from '../../src/reporters/redact-reporter';
 import { REDACTED } from '../../src/utils/redact';
+import { FAKE_TOKEN as SECRET, restoreEnvAfterEach } from './env';
 
 // Unit tests of the redaction reporter. It reads the token when it is created, so every test
-// sets a fake token first and restores the real value afterwards.
-
-const SECRET = 'fake-token-for-unit-tests';
+// sets a fake token first.
 
 /** The parts of a test result the reporter changes. */
 function resultWith(parts: Partial<TestResult>): TestResult {
@@ -27,16 +26,10 @@ function resultWith(parts: Partial<TestResult>): TestResult {
 const anyTest = {} as TestCase;
 
 test.describe('RedactReporter', { tag: '@unit' }, () => {
-  let saved: string | undefined;
+  restoreEnvAfterEach('TODOIST_API_TOKEN');
 
   test.beforeEach(() => {
-    saved = process.env['TODOIST_API_TOKEN'];
     process.env['TODOIST_API_TOKEN'] = SECRET;
-  });
-
-  test.afterEach(() => {
-    if (saved === undefined) delete process.env['TODOIST_API_TOKEN'];
-    else process.env['TODOIST_API_TOKEN'] = saved;
   });
 
   test('redacts the token in every entry of a trace zip', () => {

@@ -11,18 +11,25 @@ import { expect, test } from '@playwright/test';
 const FAKE_TOKEN = 'fake-token-for-the-leak-check-0123456789';
 const ROOT = path.resolve(__dirname, '../..');
 
-/** The environment of this worker without the real token and Playwright's own variables. */
+/** Variables a Playwright worker sets. The nested run must not think it is a worker. */
+const WORKER_VARIABLES = ['PLAYWRIGHT_TEST', 'TEST_WORKER_INDEX', 'TEST_PARALLEL_INDEX'];
+
+/** The environment of this worker, with the fake token instead of the real one. */
 function childEnv(extra: Record<string, string>): NodeJS.ProcessEnv {
   const env = Object.fromEntries(
-    Object.entries(process.env).filter(
-      ([name]) => !/^(TODOIST_API_TOKEN|TEST_|PW_|PLAYWRIGHT_)/.test(name),
-    ),
+    Object.entries(process.env).filter(([name]) => !WORKER_VARIABLES.includes(name)),
   );
   return { ...env, TODOIST_API_TOKEN: FAKE_TOKEN, ...extra };
 }
 
 function run(args: string[], env: NodeJS.ProcessEnv) {
-  const result = spawnSync(process.execPath, args, { cwd: ROOT, env, encoding: 'utf8' });
+  // spawnSync blocks the worker, so the test timeout cannot stop a hanging child. This can.
+  const result = spawnSync(process.execPath, args, {
+    cwd: ROOT,
+    env,
+    encoding: 'utf8',
+    timeout: 60_000,
+  });
   return { status: result.status, output: `${result.stdout}\n${result.stderr}` };
 }
 

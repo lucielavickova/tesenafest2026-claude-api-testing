@@ -6,9 +6,11 @@ import { redact } from './utils/redact';
  * Removes `autotest-` data left behind by earlier runs. Called once before the API tests by the
  * setup project (tests/global.setup.ts), never by the unit tests.
  */
-export default async function globalSetup(): Promise<void> {
+export default async function globalSetup(
+  factory?: Parameters<typeof createApiContext>[0],
+): Promise<void> {
   try {
-    const request = await createApiContext();
+    const request = await createApiContext(factory);
     try {
       const summary = await deleteStaleTestData(createTodoistApi(request));
       // Counts only, never names or headers.

@@ -63,7 +63,7 @@ tests/
   - `playwright.config.ts`: `trace: 'retain-on-failure'`, HTML reporter.
   - Redaction: traces record request headers, so the token is not passed via `extraHTTPHeaders` on the traced context alone. Implement redaction in a custom reporter/fixture step that rewrites the trace and report attachments, or (simpler and verified first in issue 2) send the token through a context whose trace capture excludes it. Issue 2 includes a spike that inspects a real trace zip and HTML report for the token string and adds an automated check (`scripts/check-no-token.ts`) that greps `playwright-report/` and `test-results/` for the token before artifacts are uploaded in CI. The CI step fails if found.
   - No `console.log` of config or headers; ApiError messages exclude headers.
-- **Config.** `playwright.config.ts`: `workers: CI ? 2 : undefined`, `retries: CI ? 1 : 0`, `globalSetup`, `use.baseURL` from `config/index.ts`. Strict `tsconfig.json` (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`). ESLint flat config with `typescript-eslint` (type-checked) and `eslint-plugin-playwright`. Prettier. npm scripts: `lint`, `format:check`, `typecheck`, `test`, `test:smoke`.
+- **Config.** `playwright.config.ts`: `workers: CI ? 2 : undefined`, `retries: CI ? 1 : 0`, `globalSetup` (later replaced by the `setup` project, so the `unit` project does not call the API, see issue #56), `use.baseURL` from `config/index.ts`. Strict `tsconfig.json` (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`). ESLint flat config with `typescript-eslint` (type-checked) and `eslint-plugin-playwright`. Prettier. npm scripts: `lint`, `format:check`, `typecheck`, `test`, `test:smoke`.
 
 ### Test design conventions
 

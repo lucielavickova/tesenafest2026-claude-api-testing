@@ -33,6 +33,12 @@ export default defineConfig({
     // Deletes stale `autotest-` data before the API tests. A setup project instead of
     // globalSetup, so `--project=unit` does not call the API.
     { name: 'setup', testDir: './tests', testMatch: 'global.setup.ts' },
-    { name: 'api', testDir: './tests', testIgnore: 'unit/**', dependencies: ['setup'] },
+    // A RegExp, because a glob such as 'unit/**' matches a `unit` folder anywhere in the path.
+    {
+      name: 'api',
+      testDir: './tests',
+      testIgnore: /[\\/]tests[\\/]unit[\\/]/,
+      dependencies: ['setup'],
+    },
   ],
 });

@@ -44,14 +44,16 @@ jobs:
 
       - run: npm run typecheck
 
-      # Unit tests of the framework, without the API token. They include an end-to-end check of
-      # the token redaction with a fake token.
+      # Unit tests of the framework, without the API token, for quick feedback. They include an
+      # end-to-end check of the token redaction with a fake token.
       - name: Run unit tests
         run: npm run test:unit
 
-      # API tests only, so no browsers are installed. The setup project runs first.
-      - name: Run API tests
-        run: npm run test:api
+      # All tests again (the unit tests take seconds), so the report and the flaky report cover
+      # both. Runs even when the unit tests failed. API tests only, so no browsers are installed.
+      - name: Run tests
+        if: ${{ !cancelled() }}
+        run: npm test
         env:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
 
