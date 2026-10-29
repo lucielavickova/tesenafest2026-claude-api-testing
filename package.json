@@ -2,7 +2,7 @@
   "name": "tesenafest2026-claude-api-testing",
   "version": "1.0.0",
   "private": true,
-  "description": "This repo is going to be used for workshop \"AI-assisted API Testing with Claude Code and Superpowers\" at Tesena Fest 2026",
+  "description": "Playwright API test framework for Todoist, built in one day with Claude Code at Tesena Fest 2026",
   "engines": {
     "node": ">=24 <25"
   },
@@ -29,7 +29,7 @@
     "type": "git",
     "url": "git+https://github.com/lucielavickova/tesenafest2026-claude-api-testing.git"
   },
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
