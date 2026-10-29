@@ -87,9 +87,18 @@ tests/
 
 ### Pipelines
 
-- `pr.yml` (`on: pull_request`, never `pull_request_target`): checkout, setup-node 24 with npm cache, `npm ci`, `lint`, `format:check`, `typecheck`, `npx playwright test`, token leak check, upload `playwright-report` (always) and `test-results` traces (on failure), `retention-days: 14`. Flaky tests (passed on retry) surfaced in the PR via a job summary / sticky comment built from the JSON reporter output. `permissions` minimal (`contents: read`, `pull-requests: write` for the comment).
-- `smoke.yml`: `schedule: cron '0 * * * *'` + `workflow_dispatch`, runs `--grep @smoke` on `main`. On failure, `gh` opens an issue labeled `smoke-failure` or comments on the open one (`issues: write`).
-- Both workflows use the same `concurrency: { group: todoist-account, cancel-in-progress: false }` so runs never overlap on the shared account.
+All workflows pin every `uses:` to a full commit SHA, check out with `persist-credentials: false`, use Node from `.nvmrc` with the npm cache, and run `npm ci`. Before any upload, `scripts/check-no-token.mts` checks the report and traces for the token; nothing is uploaded unless it passes. `playwright-report` is uploaded always, `test-results` traces only on failure, both with `retention-days: 14`.
+
+- `pr.yml` (`on: pull_request` to `main`, never `pull_request_target`), job `Lint, type check and tests` (the check required by the "Protect main" ruleset): `lint`, `format:check`, `typecheck`, `test:unit` without the token, then `test:api` (also when the unit tests failed). Flaky tests (passed on retry) are reported in a sticky PR comment built by `scripts/report-flaky.mts` from the JSON reporter output. `permissions`: `contents: read`, `pull-requests: write` for the comment.
+- `smoke.yml`: `npm run test:smoke` on `main` 4 times a day (07:20, 11:20, 15:20, 19:20 `Europe/Prague`) + `workflow_dispatch`. On failure, `gh` opens an issue labeled `smoke-failure` or comments on the open one (`issues: write`).
+- `nightly.yml`: the whole API suite (`npm run test:api`: smoke, regression, e2e, negative) on `main` every night at 02:20 `Europe/Prague` + `workflow_dispatch`. On failure it opens or comments on a `nightly-failure` issue, like the smoke run.
+- `issue-priority.yml`: on `issues` opened or edited, sets the `priority: P0` to `P3` label from the "Priority" field of the issue form. No tests, no token.
+
+Concurrency, all with `cancel-in-progress: false` (a cancelled run can skip its cleanup):
+
+- One group per PR (`pr-<number>`): a new push replaces only the pending run of the same PR, and PRs do not cancel each other.
+- `smoke` and `nightly` groups: runs of the same workflow never overlap. The nightly run is scheduled 5 hours before the first smoke run, so the two do not overlap either.
+- PR runs may overlap with each other and with the scheduled runs on the shared Todoist account. Each run has its own run id in the test data names and 1 worker, so the data is isolated, but many parallel PRs can still hit the free plan project limit.
 
 ### Git hooks
 
