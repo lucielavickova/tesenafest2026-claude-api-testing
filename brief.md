@@ -120,9 +120,11 @@
 - Branch name: `<issue id>-<short-description>`, for example `12-tasks-client`. *(default)*
 - Commit message: issue ID and a short summary, for example `#12 Add tasks API client`.
   A `commit-msg` hook enforces the format.
-- `main` is protected by GitHub branch protection (a human sets it up). A local
+- `main` is protected by the GitHub ruleset "Protect main": a pull request and the
+  `Lint, type check and tests` check are required, force pushes and deletion are
+  blocked. Admins may bypass it only through a pull request, for emergencies. A local
   `pre-push` hook also blocks direct pushes to `main`. The hook only helps; it doesn't
-  replace branch protection.
+  replace the ruleset.
 - A `pre-commit` hook runs ESLint and Prettier on staged files.
 - Claude never merges PRs.
   - Claude runs a code review on its own PR and fixes the findings.

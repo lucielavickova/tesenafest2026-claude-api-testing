@@ -1,4 +1,5 @@
-# Block direct pushes to main. This only helps; GitHub branch protection is the real guard.
+# Block direct pushes to main early. The "Protect main" ruleset on GitHub is the real guard:
+# it rejects direct pushes, force pushes and deletion of main, also with --no-verify.
 while read -r local_ref local_sha remote_ref remote_sha; do
   if [ "$remote_ref" = "refs/heads/main" ]; then
     echo "pre-push: direct pushes to main are blocked. Push a branch and open a PR." >&2
