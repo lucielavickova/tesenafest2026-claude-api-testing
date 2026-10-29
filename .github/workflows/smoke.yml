@@ -2,7 +2,10 @@ name: Daily smoke
 
 on:
   schedule:
-    - cron: '17 5 * * *' # once a day at 05:17 UTC, on the default branch (main)
+    # Every day at 13:20 Prague time (CET in winter, CEST in summer), on the default branch
+    # (main). GitHub may start a scheduled run a few minutes late under load.
+    - cron: '20 13 * * *'
+      timezone: Europe/Prague
   workflow_dispatch:
 
 permissions:
