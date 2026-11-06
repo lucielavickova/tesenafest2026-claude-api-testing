@@ -100,9 +100,10 @@ src/
   fixtures/             Playwright fixtures: `test` and `expect` for all spec files
   data/                 builders with the `autotest-<run id>-` prefix, stale data cleanup
   schemas/              pinned OpenAPI spec, Ajv validator, `toMatchSchema` matcher
-  reporters/            reporter that redacts the token from traces and reports
+  reporters/            reporters that redact the token from traces, reports, the console and Allure results
   utils/                dates in the account timezone, redaction helpers
 scripts/                check-no-token, report-flaky, update-openapi
+allurerc.mjs            Allure 3 report (awesome + dashboard) and its history (last 30 runs)
 tests/                  spec files, grouped by resource or suite
   global.setup.ts       setup project: deletes `autotest-` data older than 1 hour before the API tests
   unit/                 unit tests of the framework, incl. an end-to-end check of token redaction
@@ -110,6 +111,7 @@ tests/                  spec files, grouped by resource or suite
 .claude/agents/         subagents for Claude Code: ci-failure-triage (why a CI run failed)
 .github/workflows/      pr.yml (every PR), smoke.yml (@smoke on main 4 times a day),
                         nightly.yml (all API tests on main every night)
+                        smoke and nightly also upload an Allure report with trends
 ```
 
 ## Writing a test

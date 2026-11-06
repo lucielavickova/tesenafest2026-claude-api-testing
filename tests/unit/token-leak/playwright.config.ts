@@ -4,14 +4,19 @@ import { defineConfig, type ReporterDescription } from '@playwright/test';
 
 /**
  * Config of the nested run started by tests/unit/token-leak.spec.ts. Only that test uses it.
- * LEAK_CHECK_OUTPUT is the folder for the report and the test results. LEAK_CHECK_REDACT=0
- * leaves out the redaction reporters and uses the plain `list`, to prove that the token really
- * gets into the artifacts and the console output.
+ * LEAK_CHECK_OUTPUT is the folder for the reports, the Allure results and the test results.
+ * LEAK_CHECK_MODE selects the reporters:
+ * - `redacted` (default): the redaction reporters, as in the main playwright.config.ts.
+ * - `plain-allure`: the redaction reporters, but the plain `allure-playwright`. Proves that
+ *   redact-reporter.ts alone does not keep the token out of the Allure results.
+ * - `not-redacted`: no redaction at all, the plain `list` and `allure-playwright`. Proves that the
+ *   token really gets into the artifacts and the console output.
  */
 const output = process.env['LEAK_CHECK_OUTPUT'];
 if (!output) throw new Error('LEAK_CHECK_OUTPUT is not set.');
 
-const redacted = process.env['LEAK_CHECK_REDACT'] !== '0';
+const mode = process.env['LEAK_CHECK_MODE'] ?? 'redacted';
+const redacted = mode !== 'not-redacted';
 // `printSteps`, so the step titles are in the console output too.
 const listOptions = { printSteps: true };
 
@@ -20,6 +25,10 @@ const reporters: ReporterDescription[] = [
     ? ['../../../src/reporters/redact-list-reporter.ts', listOptions]
     : ['list', listOptions],
   ['html', { open: 'never', outputFolder: path.join(output, 'playwright-report') }],
+  [
+    mode === 'redacted' ? '../../../src/reporters/redact-allure-reporter.ts' : 'allure-playwright',
+    { resultsDir: path.join(output, 'allure-results') },
+  ],
 ];
 if (redacted) {
   // First, as in the main playwright.config.ts.
