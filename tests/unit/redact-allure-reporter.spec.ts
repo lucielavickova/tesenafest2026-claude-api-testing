@@ -79,16 +79,16 @@ test.describe('RedactingWriter', { tag: '@unit' }, () => {
     );
   });
 
-  test('copies an attachment file without the token as it is', () => {
+  test('writes an attachment file without the token unchanged', () => {
     const { writer, calls } = recordingWriter();
     const source = test.info().outputPath('clean.txt');
     fs.writeFileSync(source, 'no secret here');
 
     new RedactingWriter(writer, [SECRET]).writeAttachmentFromPath('c-attachment.txt', source);
 
-    expect(calls).toEqual([
-      { method: 'writeAttachmentFromPath', args: ['c-attachment.txt', source] },
-    ]);
+    expect(calls[0]?.method).toBe('writeAttachment');
+    expect(calls[0]?.args[0]).toBe('c-attachment.txt');
+    expect(String(calls[0]?.args[1])).toBe('no secret here');
   });
 
   test('writes a redacted copy of a trace zip and leaves the source file unchanged', () => {

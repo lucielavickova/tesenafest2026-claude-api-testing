@@ -137,6 +137,10 @@ test.describe('token redaction end to end', { tag: '@unit' }, () => {
     expect(check.output).toContain('trace.zip > ');
     expect(check.output).toContain('index.html');
     expect(check.output).toMatch(/allure-results[\\/]\S+-result\.json/);
+    // check-no-token reads the data of the generated report. If a new Allure version encodes it
+    // (for example base64 in index.html), the token is not found here and the check must change.
+    expect(check.output).toMatch(/allure-report[\\/]awesome[\\/]data[\\/]test-results[\\/]/);
+    expect(check.output).toMatch(/allure-report[\\/]awesome[\\/]data[\\/]attachments[\\/]/);
     // The history keeps the error message of every run, so check-no-token must scan it too.
     expect(check.output).toContain('history.jsonl');
   });

@@ -52,9 +52,12 @@ jobs:
           TODOIST_API_TOKEN: ${{ secrets.TODOIST_API_TOKEN }}
 
       # Also after failed tests, so the trend shows failed runs too. Adds this run to
-      # allure-history/history.jsonl, which keeps the last 30 runs (allurerc.mjs).
+      # allure-history/history.jsonl, which keeps the last 30 runs (allurerc.mjs). A failed report
+      # does not fail the job: that would open a failure issue for tests that passed.
       - name: Generate Allure report
+        id: allure
         if: ${{ !cancelled() }}
+        continue-on-error: true
         run: npm run allure:generate
 
       # The repo is public: nothing is uploaded unless this check passes.
@@ -73,18 +76,20 @@ jobs:
           path: playwright-report/
           retention-days: 14
 
-      # Only after the token check too: the history keeps the error messages of the runs.
+      # Only after the token check too: the history keeps the error messages of the runs. Not when
+      # the report failed, because then the history has no new run.
       - name: Save Allure history
-        if: ${{ !cancelled() && steps.leak-check.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.leak-check.outcome == 'success' && steps.allure.outcome == 'success' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: allure-history/
           key: allure-history-smoke-${{ github.run_id }}-${{ github.run_attempt }}
 
-      # An artifact and not GitHub Pages: Pages of a public repo are public to everyone, and the
-      # report has Todoist API response bodies in it.
+      # An artifact and not GitHub Pages. The report has Todoist API response bodies in it. Any
+      # signed-in GitHub user can download an artifact of a public repo, but only for 14 days;
+      # Pages would be public to everyone, without a login, indexed and permanent.
       - name: Upload Allure report
-        if: ${{ !cancelled() && steps.leak-check.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.leak-check.outcome == 'success' && steps.allure.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: allure-report

@@ -8,6 +8,7 @@ import type {
   TestStep,
 } from '@playwright/test/reporter';
 import {
+  isZip,
   redact,
   redactBytes,
   redactChunk,
@@ -59,7 +60,7 @@ export default class RedactReporter implements Reporter {
         attachment.body = redactBytes(attachment.body, this.secrets) ?? attachment.body;
       }
       if (attachment.path && fs.existsSync(attachment.path)) {
-        this.redactFile(attachment.path, attachment.contentType);
+        this.redactFile(attachment.path);
       }
     }
 
@@ -75,12 +76,10 @@ export default class RedactReporter implements Reporter {
     result.stderr = result.stderr.map((chunk) => redactChunk(chunk, this.secrets));
   }
 
-  private redactFile(filePath: string, contentType: string): void {
+  /** Zips are found by their content, so a trace is redacted whatever its name or type is. */
+  private redactFile(filePath: string): void {
     const data = fs.readFileSync(filePath);
-    const redacted =
-      contentType === 'application/zip' || filePath.endsWith('.zip')
-        ? redactZip(data, this.secrets)
-        : redactBytes(data, this.secrets);
+    const redacted = isZip(data) ? redactZip(data, this.secrets) : redactBytes(data, this.secrets);
     if (redacted) fs.writeFileSync(filePath, redacted);
   }
 

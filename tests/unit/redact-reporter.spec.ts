@@ -64,6 +64,21 @@ test.describe('RedactReporter', { tag: '@unit' }, () => {
     expect(strFromU8(entries['trace.stacks'] ?? new Uint8Array())).toBe('no secret here');
   });
 
+  test('finds a zip by its content, not by its name or content type', () => {
+    const zipPath = test.info().outputPath('archive.bin');
+    fs.writeFileSync(zipPath, zipSync({ 'body.json': strToU8(`{"echo":"${SECRET}"}`) }));
+
+    new RedactReporter().onTestEnd(
+      testWith(),
+      resultWith({
+        attachments: [{ name: 'archive', contentType: 'application/octet-stream', path: zipPath }],
+      }),
+    );
+
+    const entries = unzipSync(fs.readFileSync(zipPath));
+    expect(strFromU8(entries['body.json'] ?? new Uint8Array())).toBe(`{"echo":"${REDACTED}"}`);
+  });
+
   test('leaves a trace zip without the token unchanged', () => {
     const tracePath = test.info().outputPath('trace.zip');
     const original = zipSync({ 'trace.network': strToU8('no secret here') });

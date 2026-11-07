@@ -71,11 +71,13 @@ export class RedactingWriter implements Writer {
     this.inner.writeAttachment(distFileName, this.redactContent(content) ?? content);
   }
 
-  /** Playwright attachments with a path, for example the trace. The source file is not changed. */
+  /**
+   * Playwright attachments with a path, for example the trace. The file is read once and written
+   * from memory, and the source file is not changed.
+   */
   writeAttachmentFromPath(distFileName: string, from: string): void {
-    const redacted = this.redactContent(fs.readFileSync(from));
-    if (redacted) this.inner.writeAttachment(distFileName, redacted);
-    else this.inner.writeAttachmentFromPath(distFileName, from);
+    const content = fs.readFileSync(from);
+    this.inner.writeAttachment(distFileName, this.redactContent(content) ?? content);
   }
 
   writeEnvironmentInfo(info: Parameters<Writer['writeEnvironmentInfo']>[0]): void {
