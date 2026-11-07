@@ -16,6 +16,8 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:unit": "playwright test --project=unit",
     "test:api": "playwright test --project=api",
+    "allure:generate": "allure generate allure-results",
+    "allure:open": "allure open allure-report",
     "prepare": "husky && git config core.commentChar \";\""
   },
   "lint-staged": {
@@ -33,11 +35,16 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@allurereport/plugin-awesome": "^3.33.0",
+    "@allurereport/plugin-dashboard": "^3.33.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^24.13.6",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "allure": "^3.33.0",
+    "allure-js-commons": "3.14.0",
+    "allure-playwright": "^3.14.0",
     "dotenv": "^18.0.3",
     "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",

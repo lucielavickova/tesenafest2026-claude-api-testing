@@ -119,6 +119,12 @@
   PR. *(default)*
 - Artifacts: the Playwright HTML report (always) and traces (failed tests only), kept
   for 14 days. *(default)*
+- Allure report: the smoke and nightly runs also upload an Allure 3 report with a trend
+  dashboard as an artifact, kept for 14 days. The history of the last 30 runs is kept in the
+  Actions cache, separately for smoke and nightly. The report is not published on GitHub
+  Pages: Pages of a public repo are public to everyone, without a login and permanently.
+  An artifact is not private either (any signed-in GitHub user can download it), but it
+  expires after 14 days.
 
 ## Git workflow
 

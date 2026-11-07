@@ -2,6 +2,9 @@ package-lock.json
 playwright-report/
 test-results/
 blob-report/
+allure-results/
+allure-report/
+allure-history/
 
 # Hand-written project docs, kept as authored
 README.md

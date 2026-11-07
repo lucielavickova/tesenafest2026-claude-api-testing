@@ -20,6 +20,9 @@ export default defineConfig({
     ['./src/reporters/redact-reporter.ts'],
     // `list` that prints the test output only after redaction, see the file.
     ['./src/reporters/redact-list-reporter.ts'],
+    // allure-playwright that writes nothing before the token is removed, see the file. The report
+    // is made with `npm run allure:generate`, see allurerc.mjs.
+    ['./src/reporters/redact-allure-reporter.ts', { resultsDir: 'allure-results' }],
     ['html', { open: 'never' }],
     // Read by scripts/report-flaky.mts in CI.
     ['json', { outputFile: 'test-results/results.json' }],

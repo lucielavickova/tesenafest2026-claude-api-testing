@@ -7,9 +7,15 @@ import type {
   TestResult,
   TestStep,
 } from '@playwright/test/reporter';
-import { unzipSync, zipSync, type Zippable } from 'fflate';
-
-import { redact, redactBytes, redactChunk, redactStepTitle, secretValues } from '../utils/redact';
+import {
+  isZip,
+  redact,
+  redactBytes,
+  redactChunk,
+  redactStepTitle,
+  redactZip,
+  secretValues,
+} from '../utils/redact';
 
 /**
  * Removes the API token from everything a test result carries, before any other reporter or
@@ -22,7 +28,8 @@ import { redact, redactBytes, redactChunk, redactStepTitle, secretValues } from 
  * Playwright does not wait for a promise returned from `onTestEnd`.
  *
  * The live console output of the `list` reporter comes before `onTestEnd`, so this reporter
- * cannot redact it. redact-list-reporter.ts does that.
+ * cannot redact it. redact-list-reporter.ts does that. allure-playwright also writes attachments
+ * and step errors before `onTestEnd`, redact-allure-reporter.ts redacts them.
  */
 export default class RedactReporter implements Reporter {
   private readonly secrets = secretValues();
@@ -53,7 +60,7 @@ export default class RedactReporter implements Reporter {
         attachment.body = redactBytes(attachment.body, this.secrets) ?? attachment.body;
       }
       if (attachment.path && fs.existsSync(attachment.path)) {
-        this.redactFile(attachment.path, attachment.contentType);
+        this.redactFile(attachment.path);
       }
     }
 
@@ -69,25 +76,11 @@ export default class RedactReporter implements Reporter {
     result.stderr = result.stderr.map((chunk) => redactChunk(chunk, this.secrets));
   }
 
-  private redactFile(filePath: string, contentType: string): void {
+  /** Zips are found by their content, so a trace is redacted whatever its name or type is. */
+  private redactFile(filePath: string): void {
     const data = fs.readFileSync(filePath);
-    const redacted =
-      contentType === 'application/zip' || filePath.endsWith('.zip')
-        ? this.redactZip(data)
-        : redactBytes(data, this.secrets);
+    const redacted = isZip(data) ? redactZip(data, this.secrets) : redactBytes(data, this.secrets);
     if (redacted) fs.writeFileSync(filePath, redacted);
-  }
-
-  private redactZip(data: Buffer): Uint8Array | undefined {
-    const entries = unzipSync(data);
-    let changed = false;
-    const output: Zippable = {};
-    for (const [name, content] of Object.entries(entries)) {
-      const redacted = redactBytes(content, this.secrets);
-      if (redacted) changed = true;
-      output[name] = redacted ?? content;
-    }
-    return changed ? zipSync(output) : undefined;
   }
 
   private redactError(error: TestError): void {

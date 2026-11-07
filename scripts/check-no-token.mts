@@ -2,7 +2,8 @@
  * Fails when the Todoist API token appears anywhere in the test artifacts, including inside
  * trace zips. CI runs it before uploading the report and traces, because the repo is public.
  *
- * Usage: node scripts/check-no-token.mts [dir ...]   (default: playwright-report test-results)
+ * Usage: node scripts/check-no-token.mts [dir ...]
+ * Default: playwright-report test-results allure-results allure-report allure-history
  *
  * The script is self-contained (no imports from src/) so Node can run it directly.
  */
@@ -15,8 +16,15 @@ import { unzipSync } from 'fflate';
 dotenv.config({ quiet: true });
 
 const token = process.env['TODOIST_API_TOKEN']?.trim() ?? '';
-const dirs =
-  process.argv.length > 2 ? process.argv.slice(2) : ['playwright-report', 'test-results'];
+const DEFAULT_DIRS = [
+  'playwright-report',
+  'test-results',
+  'allure-results',
+  'allure-report',
+  // history.jsonl keeps the error messages of earlier runs, and CI keeps it in the Actions cache.
+  'allure-history',
+];
+const dirs = process.argv.length > 2 ? process.argv.slice(2) : DEFAULT_DIRS;
 
 if (token === '') {
   console.log('check-no-token: TODOIST_API_TOKEN is not set, nothing to check.');
